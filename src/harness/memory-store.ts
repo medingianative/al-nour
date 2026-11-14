@@ -50,6 +50,16 @@ db.exec(`
     agent_id TEXT PRIMARY KEY,
     config_json TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS voice_cache (
+    cache_key TEXT PRIMARY KEY,
+    speaker_id TEXT NOT NULL,
+    engine TEXT NOT NULL,
+    spoken_text TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    duration_sec REAL NOT NULL,
+    created_at TEXT NOT NULL
+  );
 `);
 
 export const DEFAULT_AGENT_MODELS: AgentModelConfig[] = [
@@ -262,5 +272,30 @@ export const MemoryStore = {
       payload_json: string;
     }>;
     return rows.map(r => JSON.parse(r.payload_json) as Episode);
+  },
+
+  getCachedVoice(cacheKey: string): { filePath: string; durationSec: number } | null {
+    const row = db.prepare('SELECT file_path, duration_sec FROM voice_cache WHERE cache_key = ?').get(cacheKey) as
+      | { file_path: string; duration_sec: number }
+      | undefined;
+    if (row && fs.existsSync(row.file_path)) {
+      return { filePath: row.file_path, durationSec: row.duration_sec };
+    }
+    return null;
+  },
+
+  saveCachedVoice(
+    cacheKey: string,
+    speakerId: string,
+    engine: string,
+    spokenText: string,
+    filePath: string,
+    durationSec: number
+  ): void {
+    db.prepare(
+      `INSERT OR REPLACE INTO voice_cache (cache_key, speaker_id, engine, spoken_text, file_path, duration_sec, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(cacheKey, speakerId, engine, spokenText, filePath, durationSec, new Date().toISOString());
   }
 };
+

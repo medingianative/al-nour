@@ -84,3 +84,21 @@ export function formatPhoneticFrench(text: string): {
 
   return { phoneticText, applied };
 }
+
+export function formatArabicScriptForMultimodal(text: string): {
+  multimodalText: string;
+  applied: Array<{ original: string; arabicScript: string }>;
+} {
+  let multimodalText = text;
+  const applied: Array<{ original: string; arabicScript: string }> = [];
+
+  for (const item of ISLAMIC_PHONETIC_GLOSSARY) {
+    if (item.pattern.test(multimodalText)) {
+      applied.push({ original: item.term, arabicScript: item.arabicScript });
+      multimodalText = multimodalText.replace(item.pattern, item.arabicScript);
+    }
+  }
+
+  return { multimodalText, applied };
+}
+

@@ -1,9 +1,11 @@
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CharacterVoiceConfig, ScriptDeliverable, SoundDeliverable, SpeakerProfileId } from '../harness/types.js';
-import { formatPhoneticFrench } from './phonetic-dictionary.js';
+import { formatPhoneticFrench, formatArabicScriptForMultimodal } from './phonetic-dictionary.js';
+import { MemoryStore } from '../harness/memory-store.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -244,19 +246,35 @@ async function synthesizeCharacterSpeechToMp3(
   profile: CharacterVoiceConfig,
   outMp3Path: string
 ): Promise<{ applied: Array<{ original: string; phonetic: string }>; engine: string }> {
-  const { phoneticText, applied } = formatPhoneticFrench(rawText);
+  // 1. Vérification du cache SQLite par réplique (0 requête consommée si déjà existant)
+  const cacheKey = createHash('sha256')
+    .update(`${profile.speakerId}::${profile.geminiVoice || profile.piperModel}::${rawText.trim()}`)
+    .digest('hex');
+
+  const cached = MemoryStore.getCachedVoice(cacheKey);
+  if (cached && fs.existsSync(cached.filePath)) {
+    try {
+      fs.copyFileSync(cached.filePath, outMp3Path);
+      return { applied: [], engine: 'Cache SQLite (0 req consommé)' };
+    } catch {}
+  }
+
+  const { phoneticText, applied: appliedFrench } = formatPhoneticFrench(rawText);
+  const { multimodalText } = formatArabicScriptForMultimodal(rawText);
   const tempWavPath = path.join(OUTPUT_DIR, `speech_raw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.wav`);
 
   let engineUsed = 'Piper-TTS ONNX Local';
   let geminiSuccess = false;
 
+  // 2. Synthèse via Gemini 3.8 Flash TTS avec calligraphie arabe vocalisée native
   if (profile.geminiVoice && GEMINI_API_KEY) {
-    geminiSuccess = await synthesizeWithGeminiTTS(phoneticText, profile.geminiVoice, tempWavPath);
+    geminiSuccess = await synthesizeWithGeminiTTS(multimodalText, profile.geminiVoice, tempWavPath);
     if (geminiSuccess) {
       engineUsed = `Gemini 3.8 Flash TTS (${profile.geminiVoice})`;
     }
   }
 
+  // 3. Fallback transparent vers Piper-TTS local en cas de quota dépassé (429) ou hors-ligne
   if (!geminiSuccess) {
     await runPiperProcess(phoneticText, profile, tempWavPath);
   }
@@ -290,7 +308,22 @@ async function synthesizeCharacterSpeechToMp3(
     fs.unlinkSync(tempWavPath);
   } catch {}
 
-  return { applied, engine: engineUsed };
+  // Mesure de la durée et enregistrement dans le cache SQLite
+  try {
+    const probe = await execFileAsync('ffprobe', [
+      '-v',
+      'error',
+      '-show_entries',
+      'format=duration',
+      '-of',
+      'default=noprint_wrappers=1:nokey=1',
+      outMp3Path
+    ]);
+    const measuredDur = parseFloat(probe.stdout.trim()) || 4.0;
+    MemoryStore.saveCachedVoice(cacheKey, profile.speakerId, engineUsed, rawText.trim(), outMp3Path, measuredDur);
+  } catch {}
+
+  return { applied: appliedFrench, engine: engineUsed };
 }
 
 export async function synthesizeSampleVoice(speakerId: SpeakerProfileId, customText?: string): Promise<string> {
