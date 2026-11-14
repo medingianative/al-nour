@@ -197,7 +197,9 @@ export interface CharacterVoiceConfig {
   role: string;
   gender: 'male' | 'female';
   toneDescription: string;
-  geminiVoice?: 'Charon' | 'Fenrir' | 'Kore' | 'Aoede' | 'Puck';
+  primaryEngine?: 'gemini' | 'qwen';
+  geminiVoice?: 'Charon' | 'Fenrir' | 'Kore' | 'Aoede' | 'Puck' | 'Leda';
+  qwenVoiceDesignPrompt?: string;
   piperModel: 'fr_FR-tom-medium.onnx' | 'fr_FR-upmc-medium.onnx' | 'fr_FR-siwis-medium.onnx';
   piperSpeakerId?: number;
   piperLengthScale: number;

@@ -34,15 +34,17 @@ function getGeminiApiKey(): string {
   return '';
 }
 
-
 export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceConfig> = {
   narrator: {
     speakerId: 'narrator',
     displayName: 'Narrateur (Al Nour)',
-    role: 'Voix signature calme & posée (Gemini Charon / Tom ONNX)',
+    role: 'Voix signature calme & posée (Gemini Charon + Backup Qwen3-TTS)',
     gender: 'male',
     toneDescription: 'Voix masculine sereine, articulée et bienveillante pour ouvrir et clore l’épisode',
+    primaryEngine: 'gemini',
     geminiVoice: 'Charon',
+    qwenVoiceDesignPrompt:
+      'A 45-year-old serene French male narrator, calm, warm, articulate and deeply soothing storytelling voice.',
     piperModel: 'fr_FR-tom-medium.onnx',
     piperLengthScale: 1.04,
     pitchShift: 0.99,
@@ -53,25 +55,31 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   tariq: {
     speakerId: 'tariq',
     displayName: 'Tariq (Père • Ingénieur)',
-    role: 'Voix adulte masculine chaleureuse (Gemini Fenrir / Pierre ONNX)',
+    role: 'Voix adulte masculine chaleureuse (Gemini Fenrir + Arabe Vocalisé)',
     gender: 'male',
     toneDescription: 'Voix posée, chaleureuse, naturelle d’un père qui écoute et transmet avec douceur',
+    primaryEngine: 'gemini',
     geminiVoice: 'Fenrir',
+    qwenVoiceDesignPrompt:
+      'A 38-year-old warm French father and engineer, calm, reassuring, natural and articulate male voice.',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 1,
     piperLengthScale: 1.0,
     pitchShift: 1.0,
     tempoMultiplier: 1.0,
-    sampleQuote: 'Assalamou Alaykoum. Comme un pont que l’on construit, le Sabr forge notre cœur dans le silence.',
+    sampleQuote: 'Assalamou Alaykoum. Comme un pont solide que l’on construit, le Sabr forge notre cœur dans le silence.',
     elevenLabsVoiceId: 'Antoni'
   },
   amina: {
     speakerId: 'amina',
     displayName: 'Amina (Mère • Infirmière)',
-    role: 'Voix féminine douce & lumineuse (Gemini Kore / Jessica ONNX)',
+    role: 'Voix féminine douce & lumineuse (Gemini Kore + Backup Qwen3-TTS)',
     gender: 'female',
     toneDescription: 'Voix féminine empathique, lumineuse et pleine de Rahma',
+    primaryEngine: 'gemini',
     geminiVoice: 'Kore',
+    qwenVoiceDesignPrompt:
+      'A 34-year-old gentle French mother and nurse, warm, empathetic, soothing and luminous female voice.',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 0,
     piperLengthScale: 1.0,
@@ -83,10 +91,13 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   ibrahim: {
     speakerId: 'ibrahim',
     displayName: 'Ibrahim (Grand-père • Ex-Avocat)',
-    role: 'Voix masculine sage, mûre & noble (Gemini Charon / Tom ONNX)',
+    role: 'Voix masculine sage, mûre & noble (Gemini Charon + Backup Qwen3-TTS)',
     gender: 'male',
     toneDescription: 'Voix masculine mûre, profonde et apaisante qui porte le poids de la sagesse et du droit',
+    primaryEngine: 'gemini',
     geminiVoice: 'Charon',
+    qwenVoiceDesignPrompt:
+      'A 68-year-old wise French grandfather and former lawyer, deep, calm, dignified, warm older male voice.',
     piperModel: 'fr_FR-tom-medium.onnx',
     piperLengthScale: 1.1,
     pitchShift: 0.94,
@@ -97,10 +108,13 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   khadija: {
     speakerId: 'khadija',
     displayName: 'Khadija (Grand-mère)',
-    role: 'Voix féminine mature & enveloppante (Gemini Aoede / Siwis ONNX)',
+    role: 'Voix féminine mature & enveloppante (Gemini Aoede + Backup Qwen3-TTS)',
     gender: 'female',
     toneDescription: 'Voix féminine douce et mature qui enveloppe d’amour et d’invocations sincères',
+    primaryEngine: 'gemini',
     geminiVoice: 'Aoede',
+    qwenVoiceDesignPrompt:
+      'A 65-year-old loving French grandmother, tender, mature, calm and comforting older female voice.',
     piperModel: 'fr_FR-siwis-medium.onnx',
     piperLengthScale: 1.08,
     pitchShift: 0.96,
@@ -111,14 +125,17 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   adam: {
     speakerId: 'adam',
     displayName: 'Adam (Fils • 10 ans)',
-    role: 'Voix de jeune garçon spontané & curieux (Gemini Puck)',
+    role: 'Voix d’enfant 10 ans réaliste (Qwen3-TTS 1.7B Voice Design)',
     gender: 'male',
-    toneDescription: 'Voix jeune, vive et sincère d’un garçon de 10 ans qui pose des questions du fond du cœur',
-    geminiVoice: 'Puck',
+    toneDescription: 'Voix naturelle de garçon de 10 ans, curieux, spontané et sincère (générée par Qwen3-TTS Voice Design)',
+    primaryEngine: 'qwen',
+    geminiVoice: 'Leda',
+    qwenVoiceDesignPrompt:
+      'A 10-year-old young boy speaking French, curious, spontaneous, warm and natural child voice.',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 1,
     piperLengthScale: 0.96,
-    pitchShift: 1.16,
+    pitchShift: 1.14,
     tempoMultiplier: 1.02,
     sampleQuote: 'Papa, pourquoi Dieu permet que des choses difficiles nous arrivent même quand on essaie de bien faire ?',
     elevenLabsVoiceId: 'Josh'
@@ -126,14 +143,17 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   lina: {
     speakerId: 'lina',
     displayName: 'Lina (Petite Fille • 6 ans)',
-    role: 'Voix de petite fille tendre & émerveillée (Gemini Aoede Enfant)',
+    role: 'Voix de petite fille 6 ans réaliste (Qwen3-TTS 1.7B Voice Design)',
     gender: 'female',
-    toneDescription: 'Voix douce, joyeuse et enfantine qui rappelle la simplicité du cœur',
-    geminiVoice: 'Aoede',
+    toneDescription: 'Voix enfantine, douce et émerveillée d’une petite fille de 6 ans (générée par Qwen3-TTS Voice Design)',
+    primaryEngine: 'qwen',
+    geminiVoice: 'Leda',
+    qwenVoiceDesignPrompt:
+      'A 6-year-old sweet little girl speaking French, high-pitched, tender, joyful and innocent child voice.',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 0,
     piperLengthScale: 0.96,
-    pitchShift: 1.18,
+    pitchShift: 1.24,
     tempoMultiplier: 1.02,
     sampleQuote: 'Maman, regarde ! Monsieur Martin avait l’air triste, est-ce qu’on peut lui donner nos petits gâteaux ?',
     elevenLabsVoiceId: 'Domi'
@@ -141,10 +161,13 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   martin: {
     speakerId: 'martin',
     displayName: 'M. Martin (Voisin d’immeuble)',
-    role: 'Voix masculine de voisin chaleureux (Gemini Fenrir)',
+    role: 'Voix masculine de voisin chaleureux (Gemini Fenrir + Backup Qwen3-TTS)',
     gender: 'male',
     toneDescription: 'Voix d’homme mûr du quartier, chaleureuse et sincère, touchée par la délicatesse de ses voisins',
+    primaryEngine: 'gemini',
     geminiVoice: 'Fenrir',
+    qwenVoiceDesignPrompt:
+      'A 60-year-old friendly French neighbor, warm, kind, sincere and approachable older male voice.',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 1,
     piperLengthScale: 1.04,
@@ -237,6 +260,57 @@ async function synthesizeWithGeminiTTS(
   return false;
 }
 
+async function synthesizeWithQwenTTS(
+  text: string,
+  voiceDescription: string,
+  outWavPath: string
+): Promise<boolean> {
+  const endpoints = [
+    'https://qwen-qwen3-tts.hf.space',
+    'https://multimodalart-qwen3-tts.hf.space'
+  ];
+
+  for (const baseUrl of endpoints) {
+    try {
+      const postRes = await fetch(`${baseUrl}/gradio_api/call/generate_voice_design`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: [text, 'French', voiceDescription]
+        })
+      });
+
+      if (!postRes.ok) continue;
+      const postJson = (await postRes.json()) as { event_id?: string };
+      if (!postJson.event_id) continue;
+
+      const sseRes = await fetch(`${baseUrl}/gradio_api/call/generate_voice_design/${postJson.event_id}`);
+      if (!sseRes.ok) continue;
+
+      const sseText = await sseRes.text();
+      const lines = sseText.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const parsed = JSON.parse(line.slice(6));
+          if (Array.isArray(parsed) && parsed[0]?.url) {
+            const audioRes = await fetch(parsed[0].url);
+            if (!audioRes.ok) continue;
+            const buf = Buffer.from(await audioRes.arrayBuffer());
+            if (buf.length > 500) {
+              fs.writeFileSync(outWavPath, buf);
+              return true;
+            }
+          }
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return false;
+}
+
 function runPiperProcess(text: string, profile: CharacterVoiceConfig, outputWavPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const modelPath = path.join(PIPER_DIR, profile.piperModel);
@@ -291,7 +365,7 @@ async function synthesizeCharacterSpeechToMp3(
 ): Promise<{ applied: Array<{ original: string; phonetic: string }>; engine: string }> {
   // 1. Vérification du cache SQLite par réplique (0 requête consommée si déjà existant)
   const cacheKey = createHash('sha256')
-    .update(`${profile.speakerId}::${profile.geminiVoice || profile.piperModel}::${rawText.trim()}`)
+    .update(`${profile.speakerId}::${profile.primaryEngine || 'gemini'}::${rawText.trim()}`)
     .digest('hex');
 
   const cached = MemoryStore.getCachedVoice(cacheKey);
@@ -307,28 +381,55 @@ async function synthesizeCharacterSpeechToMp3(
   const tempWavPath = path.join(OUTPUT_DIR, `speech_raw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.wav`);
 
   let engineUsed = 'Piper-TTS ONNX Local';
-  let geminiSuccess = false;
+  let cloudSuccess = false;
+  let usedGeminiForChild = false;
 
-  // 2. Synthèse via Gemini TTS avec calligraphie arabe vocalisée native
-  if (profile.geminiVoice && getGeminiApiKey()) {
-    geminiSuccess = await synthesizeWithGeminiTTS(multimodalText, profile.geminiVoice, tempWavPath);
-    if (geminiSuccess) {
-      engineUsed = `Gemini 3.8 Flash TTS (${profile.geminiVoice})`;
+  const isChild = profile.speakerId === 'adam' || profile.speakerId === 'lina';
+
+  if (profile.primaryEngine === 'qwen' && profile.qwenVoiceDesignPrompt) {
+    // Enfants (Adam & Lina) : Qwen3-TTS Voice Design en priorité
+    cloudSuccess = await synthesizeWithQwenTTS(phoneticText, profile.qwenVoiceDesignPrompt, tempWavPath);
+    if (cloudSuccess) {
+      engineUsed = 'Qwen3-TTS 1.7B Voice Design';
+    } else if (profile.geminiVoice && getGeminiApiKey()) {
+      cloudSuccess = await synthesizeWithGeminiTTS(multimodalText, profile.geminiVoice, tempWavPath);
+      if (cloudSuccess) {
+        engineUsed = `Gemini TTS (${profile.geminiVoice} + Timbre Enfant)`;
+        usedGeminiForChild = true;
+      }
+    }
+  } else {
+    // Adultes : Gemini TTS (avec calligraphie arabe vocalisée) en priorité, puis Qwen3-TTS en backup automatique
+    if (profile.geminiVoice && getGeminiApiKey()) {
+      cloudSuccess = await synthesizeWithGeminiTTS(multimodalText, profile.geminiVoice, tempWavPath);
+      if (cloudSuccess) {
+        engineUsed = `Gemini 3.8 Flash TTS (${profile.geminiVoice})`;
+      }
+    }
+    if (!cloudSuccess && profile.qwenVoiceDesignPrompt) {
+      cloudSuccess = await synthesizeWithQwenTTS(phoneticText, profile.qwenVoiceDesignPrompt, tempWavPath);
+      if (cloudSuccess) {
+        engineUsed = 'Qwen3-TTS 1.7B Voice Design (Backup Cloud)';
+      }
     }
   }
 
-  // 3. Fallback transparent vers Piper-TTS local en cas de quota dépassé (429) ou hors-ligne
-  if (!geminiSuccess) {
+  // 3. Fallback local Piper ONNX si hors-ligne
+  if (!cloudSuccess) {
     await runPiperProcess(phoneticText, profile, tempWavPath);
   }
 
-  const needsRubberband =
-    !geminiSuccess &&
-    (Math.abs(profile.pitchShift - 1.0) > 0.015 || Math.abs(profile.tempoMultiplier - 1.0) > 0.015);
-
-  const audioFilter = needsRubberband
-    ? `rubberband=pitch=${profile.pitchShift}:tempo=${profile.tempoMultiplier},highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11`
-    : `highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11`;
+  let audioFilter = 'highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11';
+  if (usedGeminiForChild) {
+    const rateFactor = profile.speakerId === 'lina' ? 1.24 : 1.14;
+    const tempoComp = profile.speakerId === 'lina' ? 0.83 : 0.90;
+    audioFilter = `asetrate=24000*${rateFactor},aresample=44100,atempo=${tempoComp},highpass=f=95,loudnorm=I=-16:TP=-1.5:LRA=11`;
+  } else if (
+    !cloudSuccess &&
+    (Math.abs(profile.pitchShift - 1.0) > 0.015 || Math.abs(profile.tempoMultiplier - 1.0) > 0.015)
+  ) {
+    audioFilter = `rubberband=pitch=${profile.pitchShift}:tempo=${profile.tempoMultiplier},highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11`;
+  }
 
   await execFileAsync('ffmpeg', [
     '-y',
@@ -375,8 +476,17 @@ export async function synthesizeSampleVoice(
 ): Promise<{ audioUrl: string; engine: string }> {
   const profile = CHARACTER_VOICE_PROFILES[speakerId] || CHARACTER_VOICE_PROFILES.narrator;
 
-  // 1. Si écoute standard sans phrase sur-mesure, servir immédiatement l'échantillon vocal Gemini de référence
+  // 1. Si écoute standard sans phrase sur-mesure, servir immédiatement l'échantillon de référence (Qwen3-TTS pour enfants, Gemini TTS pour adultes)
   if (!customText) {
+    if (profile.primaryEngine === 'qwen') {
+      const qwenFile = path.resolve(process.cwd(), 'public', 'samples', `qwen_${speakerId}.mp3`);
+      if (fs.existsSync(qwenFile)) {
+        return {
+          audioUrl: `/samples/qwen_${speakerId}.mp3`,
+          engine: 'Qwen3-TTS 1.7B Voice Design (Enfant)'
+        };
+      }
+    }
     const refFile = path.resolve(process.cwd(), 'public', 'samples', `sample_gemini_${speakerId}.mp3`);
     if (fs.existsSync(refFile)) {
       return {
@@ -386,7 +496,7 @@ export async function synthesizeSampleVoice(
     }
   }
 
-  // 2. Sinon synthétiser avec cache SQLite et calligraphie arabe
+  // 2. Sinon synthétiser avec architecture Hybride (Gemini + Qwen3-TTS + Cache SQLite)
   const sampleText = customText || profile.sampleQuote;
   const filename = `sample_${speakerId}_${Date.now()}.mp3`;
   const outPath = path.join(OUTPUT_DIR, filename);
@@ -510,8 +620,8 @@ export async function generateEpisodeAudio(
   const engineSummary = Array.from(enginesUsedSet).join(', ');
 
   return {
-    voiceEngineUsed: `Moteur Vocal Al Nour (${engineSummary})`,
-    voiceId: 'Casting Humain : Ibrahim (Charon), Tariq (Fenrir), Amina (Kore), Adam (Puck), Khadija (Aoede)',
+    voiceEngineUsed: `Architecture Hybride Al Nour (${engineSummary})`,
+    voiceId: 'Adultes : Gemini 3.8 TTS (Arabe Vocalisé) • Enfants & Backup : Qwen3-TTS 1.7B Voice Design',
     ambientTrack,
     phoneticAdjustmentsApplied: appliedPhoneticsList,
     audioFileUrl: `/media/${outMp3Name}`,
