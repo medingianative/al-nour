@@ -63,10 +63,12 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 2. Get full Studio State (Episodes, Residents, Locations, Agent Models, Learned Rules, Voice Lab)
+    // 2. Get full Studio State (Episodes, Residents, Locations, Agent Models, Learned Rules, Voice Lab, Monitoring)
     if (req.method === 'GET' && url.pathname === '/api/state') {
       const episodes = MemoryStore.listEpisodes();
-      const activeEpisode = episodes[0] || null;
+      const requestedId = url.searchParams.get('episodeId');
+      const activeEpisode =
+        (requestedId ? episodes.find(e => e.id === requestedId) : null) || episodes[0] || null;
       const { CHARACTER_VOICE_PROFILES } = await import('./media/audio-engine.js');
       return sendJson(res, 200, {
         telegramBotActive: telegramStatus.active,
@@ -78,8 +80,14 @@ const server = http.createServer(async (req, res) => {
         agentModels: MemoryStore.getAgentModels(),
         learnedRules: MemoryStore.getLearnedRules(),
         voiceProfiles: Object.values(CHARACTER_VOICE_PROFILES),
+        monitoring: MemoryStore.getMonitoringStats(),
         recentEvents: Orchestrator.getRecentEvents()
       });
+    }
+
+    // 2a. Dedicated Monitoring Endpoint
+    if (req.method === 'GET' && url.pathname === '/api/monitoring') {
+      return sendJson(res, 200, MemoryStore.getMonitoringStats());
     }
 
     // 2b. Voice Lab: Audition a voice sample
@@ -116,16 +124,56 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 5. Request Revision / Apply Self-Critique Alternative / Teach Rule
+    // 5. Request Revision / Apply Self-Critique Alternative / Teach Rule (supports targetGate override)
     if (req.method === 'POST' && url.pathname === '/api/episodes/revise') {
       const body = await readJsonBody(req);
       const episodeId = String(body.episodeId || '');
       const feedbackText = String(body.feedbackText || '');
-      const episode = await Orchestrator.requestRevision(episodeId, feedbackText, true);
+      const targetGate = body.targetGate ? (String(body.targetGate) as any) : undefined;
+      const episode = await Orchestrator.requestRevision(episodeId, feedbackText, true, targetGate);
       return sendJson(res, 200, {
         episode,
         telegramPreview: formatTelegramGateMessage(episode),
         learnedRules: MemoryStore.getLearnedRules()
+      });
+    }
+
+    // 5b. Non-Linear Swarm: Jump directly to any Gate / Agent at any time
+    if (req.method === 'POST' && url.pathname === '/api/episodes/select-gate') {
+      const body = await readJsonBody(req);
+      const episodeId = String(body.episodeId || '');
+      const gateId = String(body.gateId || '3_script') as any;
+      const episode = await Orchestrator.selectGate(episodeId, gateId);
+      return sendJson(res, 200, {
+        episode,
+        telegramPreview: formatTelegramGateMessage(episode)
+      });
+    }
+
+    // 5c. Inline Edit a Single Script Scene (dialogue + speaker) without regenerating the other 7 scenes
+    if (req.method === 'POST' && url.pathname === '/api/episodes/edit-scene') {
+      const body = await readJsonBody(req);
+      const episodeId = String(body.episodeId || '');
+      const sceneNumber = Number(body.sceneNumber || 1);
+      const spokenText = String(body.spokenText || '');
+      const speakerId = body.speakerId ? String(body.speakerId) : undefined;
+      const episode = await Orchestrator.updateScriptScene(episodeId, sceneNumber, spokenText, speakerId);
+      return sendJson(res, 200, {
+        episode,
+        telegramPreview: formatTelegramGateMessage(episode)
+      });
+    }
+
+    // 5d. Parallel Swarm Sync: Run Illustrator (4a+4b) and Sound Engineer (5_audio + SQLite cache) in parallel + Video (6_video)
+    if (req.method === 'POST' && url.pathname === '/api/episodes/swarm-sync') {
+      const body = await readJsonBody(req);
+      const episodeId = String(body.episodeId || '');
+      const includeVideo = body.includeVideo !== false;
+      const episode = await Orchestrator.runParallelSwarmSync(episodeId, includeVideo);
+      return sendJson(res, 200, {
+        episode,
+        telegramPreview: formatTelegramGateMessage(episode),
+        monitoring: MemoryStore.getMonitoringStats()
       });
     }
 

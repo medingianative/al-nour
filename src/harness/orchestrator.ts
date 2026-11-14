@@ -119,8 +119,15 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
-        approved: false
+        approved: false,
+        stale: false
       };
+      if (episode.steps.research) episode.steps.research.stale = true;
+      if (episode.steps.script) episode.steps.script.stale = true;
+      if (episode.steps.prompts) episode.steps.prompts.stale = true;
+      if (episode.steps.visuals) episode.steps.visuals.stale = true;
+      if (episode.steps.audio) episode.steps.audio.stale = true;
+      if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '2_research') {
       const res = await StudioAgents.runResearcher(episode, userFeedback);
       const history = episode.steps.research?.userFeedbackHistory || [];
@@ -134,8 +141,14 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
-        approved: false
+        approved: false,
+        stale: false
       };
+      if (episode.steps.script) episode.steps.script.stale = true;
+      if (episode.steps.prompts) episode.steps.prompts.stale = true;
+      if (episode.steps.visuals) episode.steps.visuals.stale = true;
+      if (episode.steps.audio) episode.steps.audio.stale = true;
+      if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '3_script') {
       const res = await StudioAgents.runScriptwriter(episode, userFeedback);
       const history = episode.steps.script?.userFeedbackHistory || [];
@@ -149,8 +162,13 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
-        approved: false
+        approved: false,
+        stale: false
       };
+      if (episode.steps.prompts) episode.steps.prompts.stale = true;
+      if (episode.steps.visuals) episode.steps.visuals.stale = true;
+      if (episode.steps.audio) episode.steps.audio.stale = true;
+      if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '4a_prompts') {
       const res = await StudioAgents.runIllustratorPrompts(episode, userFeedback);
       const history = episode.steps.prompts?.userFeedbackHistory || [];
@@ -164,8 +182,11 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
-        approved: false
+        approved: false,
+        stale: false
       };
+      if (episode.steps.visuals) episode.steps.visuals.stale = true;
+      if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '4b_visuals') {
       const res = await StudioAgents.runIllustratorRender(
         episode,
@@ -183,8 +204,10 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
-        approved: false
+        approved: false,
+        stale: false
       };
+      if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '5_audio') {
       const res = await StudioAgents.runSoundEngineer(episode, userFeedback);
       const history = episode.steps.audio?.userFeedbackHistory || [];
@@ -198,8 +221,10 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
-        approved: false
+        approved: false,
+        stale: false
       };
+      if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '6_video') {
       const res = await StudioAgents.runVideoEditor(episode);
       const history = episode.steps.video?.userFeedbackHistory || [];
@@ -213,11 +238,13 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
-        approved: false
+        approved: false,
+        stale: false
       };
     }
 
     // STOP AND WAIT FOR USER VALIDATION BEFORE PASSING TO NEXT AGENT
+    episode.activeAgents = [agentId];
     episode.status = 'awaiting_user_validation';
     MemoryStore.saveEpisode(episode);
 
@@ -226,7 +253,291 @@ class AlNourOrchestrator extends EventEmitter {
       episodeId: episode.id,
       gateId,
       agentId,
-      message: `Porte [${gateId}] prête avec autocritique — en attente de ta validation pour passer à l'agent suivant.`,
+      message: `Porte [${gateId}] prête avec autocritique — en attente de ta validation ou navigation libre dans l'essaim.`,
+      episode
+    });
+
+    return episode;
+  }
+
+  /**
+   * Jump directly to any Gate / Agent in the Swarm without losing downstream work.
+   * If that gate hasn't been generated yet, generates it immediately.
+   */
+  public async selectGate(episodeId: string, gateId: ValidationGateId): Promise<Episode> {
+    const episode = MemoryStore.getEpisode(episodeId);
+    if (!episode) {
+      throw new Error(`Épisode introuvable: ${episodeId}`);
+    }
+
+    if (gateId === 'completed') {
+      episode.currentGate = '6_video';
+      episode.activeAgent = 'video_editor';
+      episode.activeAgents = ['video_editor'];
+      MemoryStore.saveEpisode(episode);
+      return episode;
+    }
+
+    const gateToAgent: Record<Exclude<ValidationGateId, 'completed'>, AgentId> = {
+      '1_idea': 'director',
+      '2_research': 'researcher',
+      '3_script': 'scriptwriter',
+      '4a_prompts': 'illustrator',
+      '4b_visuals': 'illustrator',
+      '5_audio': 'sound_engineer',
+      '6_video': 'video_editor'
+    };
+
+    const gateKeyMap: Record<Exclude<ValidationGateId, 'completed'>, keyof Episode['steps']> = {
+      '1_idea': 'idea',
+      '2_research': 'research',
+      '3_script': 'script',
+      '4a_prompts': 'prompts',
+      '4b_visuals': 'visuals',
+      '5_audio': 'audio',
+      '6_video': 'video'
+    };
+
+    const stepKey = gateKeyMap[gateId];
+    const existingStep = episode.steps[stepKey];
+
+    if (!existingStep) {
+      return this.executeGateStep(episodeId, gateId);
+    }
+
+    episode.currentGate = gateId;
+    episode.activeAgent = gateToAgent[gateId];
+    episode.activeAgents = [gateToAgent[gateId]];
+    episode.status = 'awaiting_user_validation';
+    MemoryStore.saveEpisode(episode);
+
+    this.emitStudioEvent({
+      type: 'agent_completed_awaiting_validation',
+      episodeId: episode.id,
+      gateId,
+      agentId: episode.activeAgent,
+      message: `🎯 Navigation directe vers [${episode.activeAgent}] (Porte ${gateId}) — tu peux modifier son travail à tout moment.`,
+      episode
+    });
+
+    return episode;
+  }
+
+  /**
+   * Inline edit of a single scene's spoken dialogue or speaker in Gate 3 (Script)
+   * without regenerating the other 7 scenes! Marks Audio & Video as stale (out_of_sync).
+   */
+  public async updateScriptScene(
+    episodeId: string,
+    sceneNumber: number,
+    spokenText: string,
+    speakerId?: string
+  ): Promise<Episode> {
+    const episode = MemoryStore.getEpisode(episodeId);
+    if (!episode || !episode.steps.script) {
+      throw new Error(`Script introuvable pour l'épisode ${episodeId}`);
+    }
+
+    const SPEAKER_NAMES: Record<string, string> = {
+      narrator: 'Narrateur Al Nour',
+      tariq: 'Tariq (Père)',
+      amina: 'Amina (Mère)',
+      adam: 'Adam (10 ans)',
+      lina: 'Lina (6 ans)',
+      ibrahim: 'Grand-père Ibrahim',
+      khadija: 'Grand-mère Khadija',
+      martin: 'M. Martin (Voisin)'
+    };
+
+    const scriptDeliv = episode.steps.script.deliverable;
+    const targetScene = scriptDeliv.scenes.find(s => s.sceneNumber === sceneNumber);
+    if (!targetScene) {
+      throw new Error(`Plan ${sceneNumber} introuvable dans le script.`);
+    }
+
+    const oldSpeaker = targetScene.speakerId;
+    targetScene.spokenText = spokenText.trim();
+    if (speakerId && SPEAKER_NAMES[speakerId]) {
+      targetScene.speakerId = speakerId as any;
+      targetScene.speakerDisplayName = SPEAKER_NAMES[speakerId];
+    }
+
+    // Recompute fullNarrationText & word count
+    scriptDeliv.fullNarrationText = scriptDeliv.scenes.map(s => s.spokenText).join(' ');
+    scriptDeliv.totalWordCount = scriptDeliv.fullNarrationText.split(/\s+/).filter(Boolean).length;
+    if (sceneNumber === 1) {
+      scriptDeliv.hookFirst3Seconds = targetScene.spokenText;
+    }
+
+    // Also update subtitleText in existing prompts / visuals if present
+    if (episode.steps.prompts?.deliverable.scenes) {
+      const pScene = episode.steps.prompts.deliverable.scenes.find(s => s.sceneNumber === sceneNumber);
+      if (pScene) {
+        pScene.subtitleText = targetScene.spokenText;
+        pScene.speakerId = targetScene.speakerId;
+        pScene.speakerDisplayName = targetScene.speakerDisplayName;
+      }
+    }
+    if (episode.steps.visuals?.deliverable.scenes) {
+      const vScene = episode.steps.visuals.deliverable.scenes.find(s => s.sceneNumber === sceneNumber);
+      if (vScene) {
+        vScene.subtitleText = targetScene.spokenText;
+        vScene.speakerId = targetScene.speakerId;
+        vScene.speakerDisplayName = targetScene.speakerDisplayName;
+      }
+      if (oldSpeaker !== targetScene.speakerId) {
+        episode.steps.visuals.stale = true;
+      }
+    }
+
+    // Mark downstream audio & video as needing synchronization
+    if (episode.steps.audio) episode.steps.audio.stale = true;
+    if (episode.steps.video) episode.steps.video.stale = true;
+
+    episode.steps.script.userFeedbackHistory.push(
+      `[Édition directe Plan ${sceneNumber}] ${targetScene.speakerDisplayName}: "${targetScene.spokenText}"`
+    );
+
+    MemoryStore.saveEpisode(episode);
+    this.emitStudioEvent({
+      type: 'agent_revision_requested',
+      episodeId: episode.id,
+      gateId: '3_script',
+      agentId: 'scriptwriter',
+      message: `✏️ Plan ${sceneNumber} modifié en direct ! L'Audio (Cache SQLite 7/8 plans gratuits) et la Vidéo sont marqués ⚠️ À synchroniser.`,
+      episode
+    });
+
+    return episode;
+  }
+
+  /**
+   * Parallel Swarm Execution (DAG):
+   * Runs Visual Branch (Leïla: 4a_prompts + 4b_visuals) and Audio Branch (Bilal: 5_audio with SQLite cache)
+   * simultaneously via Promise.all, then updates Gate 6 (Nadia: Video MP4) if needed.
+   */
+  public async runParallelSwarmSync(episodeId: string, includeVideo: boolean = true): Promise<Episode> {
+    let episode = MemoryStore.getEpisode(episodeId);
+    if (!episode) {
+      throw new Error(`Épisode introuvable: ${episodeId}`);
+    }
+
+    // Ensure upstream foundations exist
+    if (!episode.steps.idea) {
+      episode = await this.executeGateStep(episodeId, '1_idea');
+    }
+    if (!episode.steps.research || episode.steps.research.stale) {
+      episode = await this.executeGateStep(episodeId, '2_research');
+    }
+    if (!episode.steps.script || episode.steps.script.stale) {
+      episode = await this.executeGateStep(episodeId, '3_script');
+    }
+
+    episode.status = 'agent_working';
+    episode.activeAgent = 'illustrator';
+    episode.activeAgents = ['illustrator', 'sound_engineer'];
+    MemoryStore.saveEpisode(episode);
+
+    this.emitStudioEvent({
+      type: 'agent_started',
+      episodeId: episode.id,
+      gateId: '4b_visuals',
+      agentId: 'illustrator',
+      message: `⚡ Essaim en Parallèle lancé : Leïla (Visuels 9:16) et Bilal (Voix-Off + Cache SQLite) travaillent simultanément !`,
+      episode
+    });
+
+    const now = new Date().toISOString();
+
+    // Branch A (Illustrator: Prompts + Visuals) and Branch B (Sound Engineer: Multi-Voice Audio) in parallel!
+    const visualBranch = (async () => {
+      if (!episode!.steps.prompts || episode!.steps.prompts.stale) {
+        const pRes = await StudioAgents.runIllustratorPrompts(episode!);
+        episode!.steps.prompts = {
+          agentId: 'illustrator',
+          gateId: '4a_prompts',
+          createdAt: now,
+          modelUsed: pRes.modelUsed,
+          tokensUsed: pRes.tokensUsed,
+          deliverable: pRes.deliverable,
+          selfCritique: pRes.selfCritique,
+          userFeedbackHistory: episode!.steps.prompts?.userFeedbackHistory || [],
+          approved: true,
+          stale: false
+        };
+      }
+      if (!episode!.steps.visuals || episode!.steps.visuals.stale) {
+        const vRes = await StudioAgents.runIllustratorRender(episode!);
+        episode!.steps.visuals = {
+          agentId: 'illustrator',
+          gateId: '4b_visuals',
+          createdAt: now,
+          modelUsed: vRes.modelUsed,
+          tokensUsed: vRes.tokensUsed,
+          deliverable: vRes.deliverable,
+          selfCritique: vRes.selfCritique,
+          userFeedbackHistory: episode!.steps.visuals?.userFeedbackHistory || [],
+          approved: true,
+          stale: false
+        };
+      }
+    })();
+
+    const audioBranch = (async () => {
+      if (!episode!.steps.audio || episode!.steps.audio.stale) {
+        const aRes = await StudioAgents.runSoundEngineer(episode!);
+        episode!.steps.audio = {
+          agentId: 'sound_engineer',
+          gateId: '5_audio',
+          createdAt: now,
+          modelUsed: aRes.modelUsed,
+          tokensUsed: aRes.tokensUsed,
+          deliverable: aRes.deliverable,
+          selfCritique: aRes.selfCritique,
+          userFeedbackHistory: episode!.steps.audio?.userFeedbackHistory || [],
+          approved: true,
+          stale: false
+        };
+      }
+    })();
+
+    await Promise.all([visualBranch, audioBranch]);
+    MemoryStore.saveEpisode(episode);
+
+    if (includeVideo || episode.steps.video) {
+      episode.activeAgent = 'video_editor';
+      episode.activeAgents = ['video_editor'];
+      episode.currentGate = '6_video';
+      MemoryStore.saveEpisode(episode);
+
+      const vidRes = await StudioAgents.runVideoEditor(episode);
+      episode.steps.video = {
+        agentId: 'video_editor',
+        gateId: '6_video',
+        createdAt: new Date().toISOString(),
+        modelUsed: vidRes.modelUsed,
+        tokensUsed: vidRes.tokensUsed,
+        deliverable: vidRes.deliverable,
+        selfCritique: vidRes.selfCritique,
+        userFeedbackHistory: episode.steps.video?.userFeedbackHistory || [],
+        approved: false,
+        stale: false
+      };
+    } else {
+      episode.currentGate = '5_audio';
+      episode.activeAgent = 'sound_engineer';
+      episode.activeAgents = ['illustrator', 'sound_engineer'];
+    }
+
+    episode.status = 'awaiting_user_validation';
+    MemoryStore.saveEpisode(episode);
+
+    this.emitStudioEvent({
+      type: 'agent_completed_awaiting_validation',
+      episodeId: episode.id,
+      gateId: episode.currentGate,
+      agentId: episode.activeAgent,
+      message: `✅ Synchronisation parallèle terminée (Visuels 9:16 + Voix-Off Cache SQLite + Master MP4 à jour) !`,
       episode
     });
 
@@ -273,6 +584,7 @@ class AlNourOrchestrator extends EventEmitter {
     if (nextGate === 'completed') {
       episode.currentGate = 'completed';
       episode.activeAgent = null;
+      episode.activeAgents = [];
       episode.status = 'completed';
       MemoryStore.saveEpisode(episode);
       this.emitStudioEvent({
@@ -292,14 +604,26 @@ class AlNourOrchestrator extends EventEmitter {
   public async requestRevision(
     episodeId: string,
     feedbackText: string,
-    learnRule: boolean = true
+    learnRule: boolean = true,
+    targetGateOverride?: ValidationGateId
   ): Promise<Episode> {
     const episode = MemoryStore.getEpisode(episodeId);
     if (!episode) {
       throw new Error(`Épisode introuvable: ${episodeId}`);
     }
 
-    const activeAgent = episode.activeAgent || 'director';
+    const targetGate = targetGateOverride || (episode.currentGate === 'completed' ? '3_script' : episode.currentGate);
+    const gateToAgent: Record<Exclude<ValidationGateId, 'completed'>, AgentId> = {
+      '1_idea': 'director',
+      '2_research': 'researcher',
+      '3_script': 'scriptwriter',
+      '4a_prompts': 'illustrator',
+      '4b_visuals': 'illustrator',
+      '5_audio': 'sound_engineer',
+      '6_video': 'video_editor'
+    };
+
+    const activeAgent = targetGate !== 'completed' ? gateToAgent[targetGate] : (episode.activeAgent || 'director');
     if (learnRule && feedbackText.trim().length > 4) {
       MemoryStore.addLearnedRule(activeAgent, feedbackText);
     }
@@ -307,13 +631,13 @@ class AlNourOrchestrator extends EventEmitter {
     this.emitStudioEvent({
       type: 'agent_revision_requested',
       episodeId: episode.id,
-      gateId: episode.currentGate,
+      gateId: targetGate,
       agentId: activeAgent,
-      message: `Retouche demandée à [${activeAgent}] : « ${feedbackText} » (Règle enregistrée en mémoire).`,
+      message: `Retouche demandée à [${activeAgent}] (Porte ${targetGate}) : « ${feedbackText} » (Règle enregistrée en mémoire).`,
       episode
     });
 
-    return this.executeGateStep(episode.id, episode.currentGate, feedbackText);
+    return this.executeGateStep(episode.id, targetGate, feedbackText);
   }
 }
 

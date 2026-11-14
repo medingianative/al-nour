@@ -14,6 +14,48 @@ function formatSelfCritiqueBlock(sc: SelfCritique): string {
   ].join('\n');
 }
 
+function buildSwarmFooter(
+  episode: Episode,
+  baseButtons: Array<Array<{ label: string; action: string }>>
+): { staleNotice: string; buttons: Array<Array<{ label: string; action: string }>> } {
+  const staleSteps: string[] = [];
+  if (episode.steps.research?.stale) staleSteps.push('2.Sources');
+  if (episode.steps.script?.stale) staleSteps.push('3.Script');
+  if (episode.steps.prompts?.stale || episode.steps.visuals?.stale) staleSteps.push('4.Visuels');
+  if (episode.steps.audio?.stale) staleSteps.push('5.Audio');
+  if (episode.steps.video?.stale) staleSteps.push('6.Vidéo');
+
+  const staleNotice =
+    staleSteps.length > 0
+      ? `\n\n⚠️ *Étapes aval à synchroniser* : \`${staleSteps.join(' • ')}\` _(Cache SQLite actif : seules les répliques modifiées seront régénérées)_`
+      : '';
+
+  const buttons = [...baseButtons];
+
+  if (staleSteps.length > 0 || episode.steps.script) {
+    buttons.push([
+      {
+        label:
+          staleSteps.length > 0
+            ? `⚡ Synchroniser l'Essaim en Parallèle (${staleSteps.join('+')})`
+            : '⚡ Lancer Visuels + Audio + Vidéo en Parallèle',
+        action: `swarm_sync:${episode.id}`
+      }
+    ]);
+  }
+
+  buttons.push([
+    { label: '🎯 1.Idée', action: `jump:${episode.id}:1_idea` },
+    { label: '🎯 2.Sources', action: `jump:${episode.id}:2_research` },
+    { label: '🎯 3.Script', action: `jump:${episode.id}:3_script` },
+    { label: '🎯 4b.Visuels', action: `jump:${episode.id}:4b_visuals` },
+    { label: '🎯 5.Audio', action: `jump:${episode.id}:5_audio` },
+    { label: '🎯 6.Vidéo', action: `jump:${episode.id}:6_video` }
+  ]);
+
+  return { staleNotice, buttons };
+}
+
 export function formatTelegramGateMessage(episode: Episode): {
   text: string;
   buttons: Array<Array<{ label: string; action: string }>>;
@@ -22,6 +64,11 @@ export function formatTelegramGateMessage(episode: Episode): {
 
   if (gate === '1_idea' && episode.steps.idea) {
     const { deliverable: d, selfCritique: sc, modelUsed } = episode.steps.idea;
+    const { staleNotice, buttons } = buildSwarmFooter(episode, [
+      [{ label: '✅ Valider & Passer au Chercheur (Porte 2)', action: `approve:${episode.id}` }],
+      [{ label: '💡 Appliquer l’alternative de l’autocritique', action: `alt:${episode.id}` }],
+      [{ label: '🔄 Régénérer l’idée', action: `regen:${episode.id}` }]
+    ]);
     const text = [
       `🎬 *PORTE 1/6 — Cadrage & Casting HLM (Directeur Studio)*`,
       `🤖 _Modèle : ${modelUsed}_`,
@@ -33,21 +80,20 @@ export function formatTelegramGateMessage(episode: Episode): {
       `🏠 *Décors HLM / Immersion* : ${d.primaryLocations.join(', ')}`,
       `📖 *Arc narratif* : ${d.narrativeArcSummary}`,
       formatSelfCritiqueBlock(sc),
-      `\n_Réponds par message pour demander un ajustement, ou clique ci-dessous :_`
+      staleNotice,
+      `\n_Réponds par message (ou \`@script ...\`, \`@son ...\`) pour cibler un agent, ou clique ci-dessous :_`
     ].join('\n');
 
-    return {
-      text,
-      buttons: [
-        [{ label: '✅ Valider & Passer au Chercheur (Porte 2)', action: `approve:${episode.id}` }],
-        [{ label: '💡 Appliquer l’alternative de l’autocritique', action: `alt:${episode.id}` }],
-        [{ label: '🔄 Régénérer l’idée', action: `regen:${episode.id}` }]
-      ]
-    };
+    return { text, buttons };
   }
 
   if (gate === '2_research' && episode.steps.research) {
     const { deliverable: d, selfCritique: sc, modelUsed } = episode.steps.research;
+    const { staleNotice, buttons } = buildSwarmFooter(episode, [
+      [{ label: '✅ Valider & Passer au Scénariste (Porte 3)', action: `approve:${episode.id}` }],
+      [{ label: '💡 Appliquer l’alternative de l’autocritique', action: `alt:${episode.id}` }],
+      [{ label: '🔄 Régénérer la recherche', action: `regen:${episode.id}` }]
+    ]);
     const text = [
       `📚 *PORTE 2/6 — Sources Islamiques & Charte Éthique (Chercheuse)*`,
       `🤖 _Modèle : ${modelUsed}_`,
@@ -57,44 +103,41 @@ export function formatTelegramGateMessage(episode: Episode): {
       `✨ *Terme clé* : ${d.arabicKeyTerm} — _${d.frenchMeaning}_`,
       `🏘️ *Application dans l'immeuble HLM* : ${d.historicalOrDailyContext}`,
       `🛡️ *Charte Éthique* : Sans visage ✅ | Zéro Prophète représenté ✅ | Zéro cliché ✅`,
-      formatSelfCritiqueBlock(sc)
+      formatSelfCritiqueBlock(sc),
+      staleNotice
     ].join('\n');
 
-    return {
-      text,
-      buttons: [
-        [{ label: '✅ Valider & Passer au Scénariste (Porte 3)', action: `approve:${episode.id}` }],
-        [{ label: '💡 Appliquer l’alternative de l’autocritique', action: `alt:${episode.id}` }],
-        [{ label: '🔄 Régénérer la recherche', action: `regen:${episode.id}` }]
-      ]
-    };
+    return { text, buttons };
   }
 
   if (gate === '3_script' && episode.steps.script) {
     const { deliverable: d, selfCritique: sc, modelUsed } = episode.steps.script;
     const scenesList = d.scenes
-      .map(s => `  *${s.sceneNumber}.* [${s.durationSec}s • \`${s.locationId}\`] "${s.spokenText}"`)
+      .map(
+        s =>
+          `  *${s.sceneNumber}.* [${s.durationSec}s • \`${s.speakerDisplayName || s.speakerId}\`] "${s.spokenText}"`
+      )
       .join('\n');
 
+    const { staleNotice, buttons } = buildSwarmFooter(episode, [
+      [{ label: '✅ Valider & Préparer le Storyboard 2D (Porte 4a)', action: `approve:${episode.id}` }],
+      [{ label: '💡 Appliquer l’alternative de l’autocritique', action: `alt:${episode.id}` }],
+      [{ label: '🔄 Réécrire le script complet', action: `regen:${episode.id}` }]
+    ]);
+
     const text = [
-      `✍️ *PORTE 3/6 — Script TikTok 40–60s & Hooks (Scénariste)*`,
+      `✍️ *PORTE 3/6 — Script TikTok 40–60s & Dialogues Multi-Voix (Scénariste)*`,
       `🤖 _Modèle : ${modelUsed}_`,
       ``,
       `⚡ *Hook (0–3s)* : « *${d.hookFirst3Seconds}* »`,
       `🎙️ *Voix narratrice* : \`${d.narratorVoiceProfile}\` (${d.totalEstimatedDurationSec}s • ${d.totalWordCount} mots)`,
       ``,
-      `🎞️ *Découpage des 8 plans* :\n${scenesList}`,
-      formatSelfCritiqueBlock(sc)
+      `🎞️ *Découpage des 8 plans (modifiables plan par plan)* :\n${scenesList}`,
+      formatSelfCritiqueBlock(sc),
+      staleNotice
     ].join('\n');
 
-    return {
-      text,
-      buttons: [
-        [{ label: '✅ Valider & Préparer le Storyboard 2D (Porte 4a)', action: `approve:${episode.id}` }],
-        [{ label: '💡 Appliquer l’alternative de l’autocritique', action: `alt:${episode.id}` }],
-        [{ label: '🔄 Réécrire le script', action: `regen:${episode.id}` }]
-      ]
-    };
+    return { text, buttons };
   }
 
   if (gate === '4a_prompts' && episode.steps.prompts) {
@@ -108,47 +151,46 @@ export function formatTelegramGateMessage(episode: Episode): {
       )
       .join('\n');
 
+    const { staleNotice, buttons } = buildSwarmFooter(episode, [
+      [{ label: '✅ Valider & Générer les 8 Images 9:16 (Porte 4b)', action: `approve:${episode.id}` }],
+      [{ label: '💡 Appliquer l’alternative (Flux sur Immersion)', action: `alt:${episode.id}` }]
+    ]);
+
     const text = [
       `🎨 *PORTE 4a/6 — Validation du Storyboard & Direction Artistique*`,
       `🤖 _Modèle : ${modelUsed}_`,
       ``,
       `🖼️ *Style* : ${d.visualStyleSummary}`,
       `\n📋 *Plans à illustrer* :\n${summary}`,
-      formatSelfCritiqueBlock(sc)
+      formatSelfCritiqueBlock(sc),
+      staleNotice
     ].join('\n');
 
-    return {
-      text,
-      buttons: [
-        [{ label: '✅ Valider & Générer les 8 Images 9:16 (Porte 4b)', action: `approve:${episode.id}` }],
-        [{ label: '💡 Appliquer l’alternative (Flux sur Immersion)', action: `alt:${episode.id}` }]
-      ]
-    };
+    return { text, buttons };
   }
 
   if (gate === '4b_visuals' && episode.steps.visuals) {
     const { deliverable: d, selfCritique: sc, modelUsed } = episode.steps.visuals;
+    const { staleNotice, buttons } = buildSwarmFooter(episode, [
+      [{ label: '✅ Valider les Images & Générer la Voix-Off (Porte 5)', action: `approve:${episode.id}` }],
+      [
+        { label: '🔄 Plan 1', action: `scene_regen:${episode.id}:1` },
+        { label: '🔄 Plan 2', action: `scene_regen:${episode.id}:2` },
+        { label: '🔄 Plan 4', action: `scene_regen:${episode.id}:4` },
+        { label: '🎨 Flux Plan 6', action: `scene_flux:${episode.id}:6` }
+      ]
+    ]);
     const text = [
       `🖼️ *PORTE 4b/6 — Album des 8 Illustrations 9:16 Générées (1080x1920)*`,
       `🤖 _Moteur : ${modelUsed}_`,
       ``,
       `Les ${d.scenes.length} scènes de la Famille Al Nour et du bâtiment HLM sont générées !`,
-      `Tu peux régénérer un plan précis, basculer un plan en Flux IA gratuit, ou valider pour lancer la voix-off.`,
-      formatSelfCritiqueBlock(sc)
+      `Tu peux régénérer un plan précis, basculer un plan en Flux IA gratuit, ou revenir sur le Script à tout moment.`,
+      formatSelfCritiqueBlock(sc),
+      staleNotice
     ].join('\n');
 
-    return {
-      text,
-      buttons: [
-        [{ label: '✅ Valider les Images & Générer la Voix-Off (Porte 5)', action: `approve:${episode.id}` }],
-        [
-          { label: '🔄 Plan 1', action: `scene_regen:${episode.id}:1` },
-          { label: '🔄 Plan 2', action: `scene_regen:${episode.id}:2` },
-          { label: '🔄 Plan 4', action: `scene_regen:${episode.id}:4` },
-          { label: '🎨 Flux Plan 6', action: `scene_flux:${episode.id}:6` }
-        ]
-      ]
-    };
+    return { text, buttons };
   }
 
   if (gate === '5_audio' && episode.steps.audio) {
@@ -158,42 +200,44 @@ export function formatTelegramGateMessage(episode: Episode): {
         ? d.phoneticAdjustmentsApplied.map(p => `${p.original} → _${p.phonetic}_`).join(', ')
         : 'Aucun terme complexe détecté';
 
+    const { staleNotice, buttons } = buildSwarmFooter(episode, [
+      [{ label: '✅ Valider l’Audio & Lancer le Montage MP4 9:16 (Porte 6)', action: `approve:${episode.id}` }],
+      [{ label: '💡 Changer d’ambiance sonore (Alternative)', action: `alt:${episode.id}` }],
+      [{ label: '🔄 Régénérer l’audio', action: `regen:${episode.id}` }]
+    ]);
+
     const text = [
-      `🎙️ *PORTE 5/6 — Voix-Off Française, Phonétique & Ambiance Halal*`,
+      `🎙️ *PORTE 5/6 — Voix-Off Multi-Personnages, Phonétique & Ambiance Halal*`,
       `🔊 *Moteur* : ${d.voiceEngineUsed}`,
-      `🗣️ *Voix* : \`${d.voiceId}\` • *Ambiance* : \`${d.ambientTrack}\` (${d.durationSec}s)`,
-      `📖 *Dictionnaire Phonétique Islamique appliqué* : ${phonetics}`,
-      formatSelfCritiqueBlock(sc)
+      `🗣️ *Distribution* : \`${d.voiceId}\` • *Ambiance* : \`${d.ambientTrack}\` (${d.durationSec}s)`,
+      `📖 *Calligraphie Arabe & Phonétique appliquées* : ${phonetics}`,
+      formatSelfCritiqueBlock(sc),
+      staleNotice
     ].join('\n');
 
-    return {
-      text,
-      buttons: [
-        [{ label: '✅ Valider l’Audio & Lancer le Montage MP4 9:16 (Porte 6)', action: `approve:${episode.id}` }],
-        [{ label: '💡 Changer d’ambiance sonore (Alternative)', action: `alt:${episode.id}` }],
-        [{ label: '🔄 Régénérer l’audio', action: `regen:${episode.id}` }]
-      ]
-    };
+    return { text, buttons };
   }
 
   if ((gate === '6_video' || gate === 'completed') && episode.steps.video) {
     const { deliverable: d, selfCritique: sc } = episode.steps.video;
     const caption = episode.steps.script?.deliverable.tiktokCaptionAndHashtags || '';
+    const { staleNotice, buttons } = buildSwarmFooter(
+      episode,
+      gate === 'completed'
+        ? [[{ label: '🎉 Épisode Validé & Terminé', action: `done:${episode.id}` }]]
+        : [[{ label: '✅ Approuver le Master Final TikTok', action: `approve:${episode.id}` }]]
+    );
     const text = [
       `🎬 *PORTE 6/6 — Montage Final TikTok 9:16 Terminé !*`,
       `📐 *Format* : ${d.resolution} • ${d.durationSec}s • ${d.fileSizeMb} Mo`,
       `✨ *Sous-titres* : ${d.subtitleStyle}`,
       `📝 *Description TikTok prête à copier* :\n\`${caption}\``,
-      formatSelfCritiqueBlock(sc)
+      `💰 *Éligibilité TikTok Creator Rewards (>45s–60s)* : RPM estimé 0,40 € – 1,20 € / 1k vues qualifiées`,
+      formatSelfCritiqueBlock(sc),
+      staleNotice
     ].join('\n');
 
-    return {
-      text,
-      buttons:
-        gate === 'completed'
-          ? [[{ label: '🎉 Épisode Validé & Terminé', action: `done:${episode.id}` }]]
-          : [[{ label: '✅ Approuver le Master Final TikTok', action: `approve:${episode.id}` }]]
-    };
+    return { text, buttons };
   }
 
   return {
@@ -242,12 +286,65 @@ export function startTelegramBotIfConfigured(): { active: boolean; botUsername?:
   bot.command('start', async ctx => {
     activeChatId = ctx.chat.id;
     await ctx.reply(
-      `🌙 *Salam et bienvenue dans le Studio Agentique Al Nour !*\n\n` +
+      `🌙 *Salam et bienvenue dans l'Essaim Agentique Al Nour !*\n\n` +
         `Commandes disponibles :\n` +
-        `• \`/new <ton idée de vidéo>\` : Lancer un nouvel épisode (avec validation à chaque porte)\n` +
+        `• \`/new <ton idée de vidéo>\` : Lancer un nouvel épisode\n` +
+        `• \`/monitoring\` : Voir la stack IA, tokens, cache vocal SQLite & coûts (0,00 €)\n` +
+        `• \`/tiktok\` : Kit de publication TikTok (3 descriptions, hashtags & simulateur RPM)\n` +
+        `• \`/voix\` : Auditionner les voix humaines Gemini 3.8 + Qwen3-TTS\n` +
         `• \`/habitants\` : Voir les habitants du bâtiment HLM\n` +
         `• \`/regles\` : Voir les règles apprises par tes agents\n` +
-        `• Envoie simplement un message texte à tout moment pour demander une correction à l'agent actif !`,
+        `• Ciblage direct d'un agent à tout moment : écris \`@script ...\`, \`@idee ...\`, \`@recherche ...\`, \`@visuels ...\` ou \`@son ...\` !`,
+      { parse_mode: 'Markdown' }
+    );
+  });
+
+  bot.command('monitoring', async ctx => {
+    const stats = MemoryStore.getMonitoringStats();
+    const agentsLines = stats.agents
+      .map(
+        a =>
+          `• *${a.agentName}* : \`${a.lastModelUsed}\` (${a.callsCount} appels • ${a.inputTokens + a.outputTokens} tok)`
+      )
+      .join('\n');
+    const ttsLines = stats.ttsStack.map(t => `• *${t.tier}* : ${t.engine}`).join('\n');
+    await ctx.reply(
+      `📊 *Monitoring & Coûts Studio Al Nour*\n\n` +
+        `🎬 *Épisodes* : ${stats.totalEpisodes} (${stats.completedEpisodes} terminés)\n` +
+        `🧮 *Tokens cumulés* : ${stats.totalTokens} tokens (${stats.totalInputTokens} in / ${stats.totalOutputTokens} out)\n` +
+        `💶 *Coût réel facturé* : *${stats.actualCostEur.toFixed(2)} €* _(Économie API estimée : ~${stats.estimatedCommercialSavedEur} €)_\n` +
+        `🗄️ *Cache Vocal SQLite* : ${stats.voiceCache.totalCachedSegments} répliques en cache (${stats.voiceCache.totalDurationSec}s d'audio réutilisable à 0 quota)\n\n` +
+        `🤖 *Stack LLM par Agent* :\n${agentsLines}\n\n` +
+        `🎙️ *Stack Vocale Hybride* :\n${ttsLines}`,
+      { parse_mode: 'Markdown' }
+    );
+  });
+
+  bot.command('tiktok', async ctx => {
+    const episodes = MemoryStore.listEpisodes();
+    const ep = (currentEpisodeId ? MemoryStore.getEpisode(currentEpisodeId) : null) || episodes[0];
+    if (!ep) {
+      await ctx.reply(`Lance d'abord un épisode avec \`/new\` pour générer le Kit TikTok !`, { parse_mode: 'Markdown' });
+      return;
+    }
+    const title = ep.steps.idea?.deliverable.title || ep.topicPrompt;
+    const hook = ep.steps.script?.deliverable.hookFirst3Seconds || title;
+    const moral = ep.steps.script?.deliverable.closingInvocationOrMoral || 'La douceur ouvre les cœurs.';
+    const source = ep.steps.research?.deliverable.referenceCitation || 'Sagesse Prophétique';
+
+    await ctx.reply(
+      `📱 *Kit Publication TikTok & Simulateur RPM — ${title}*\n\n` +
+        `1️⃣ *Variante Émotionnelle & Voisinage (Recommandée)* :\n` +
+        `\`${hook} Dans notre immeuble HLM, un simple geste a tout changé. ${moral} 🌙✨ #AlNour #IslamDouceur #Voisinage #SagesseIslamique #Bienveillance #PourToi\`\n\n` +
+        `2️⃣ *Variante Question Engageante (Boost Commentaires)* :\n` +
+        `\`Et vous, comment auriez-vous réagi face à votre voisin ? 🏢🤝 Découvrez comment la famille Al Nour applique cette belle parole (${source}). #AlNour #RappelIslam #VivreEnsemble #HistoireMorale #FYP\`\n\n` +
+        `3️⃣ *Variante Éducative & Source Authentique* :\n` +
+        `\`📖 ${source} — "${moral}" Une scène du quotidien à la Résidence Les Cèdres pour apaiser le cœur. #AlNour #HadithDuJour #Adab #PaixInterieure #PourToi\`\n\n` +
+        `💰 *Estimation Revenus TikTok (Format >45s–60s France/Europe, RPM ~0,75 €)* :\n` +
+        `• *50 000 vues* (~60% qualifiées) : *~22 €*\n` +
+        `• *250 000 vues* (~60% qualifiées) : *~112 €*\n` +
+        `• *1 000 000 vues* (~60% qualifiées) : *~450 €*\n` +
+        `• *Projection 30 vidéos/mois (moy. 100k vues)* : *~1 350 € / mois*`,
       { parse_mode: 'Markdown' }
     );
   });
@@ -321,6 +418,20 @@ export function startTelegramBotIfConfigured(): { active: boolean; botUsername?:
     if (action === 'approve') {
       const updated = await Orchestrator.approveCurrentGate(epId);
       if (ctx.chat) await sendGateUpdateToTelegram(ctx.chat.id, updated);
+    } else if (action === 'jump') {
+      const targetGate = (param || '3_script') as any;
+      const updated = await Orchestrator.selectGate(epId, targetGate);
+      if (ctx.chat) await sendGateUpdateToTelegram(ctx.chat.id, updated);
+    } else if (action === 'swarm_sync') {
+      if (ctx.chat) {
+        await bot.api.sendMessage(
+          ctx.chat.id,
+          `⚡ *Essaim lancé en parallèle* : Leïla (Visuels 9:16) et Bilal (Audio Multi-Voix + Cache SQLite) travaillent simultanément...`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+      const updated = await Orchestrator.runParallelSwarmSync(epId, true);
+      if (ctx.chat) await sendGateUpdateToTelegram(ctx.chat.id, updated);
     } else if (action === 'regen') {
       const ep = MemoryStore.getEpisode(epId);
       if (ep) {
@@ -370,10 +481,29 @@ export function startTelegramBotIfConfigured(): { active: boolean; botUsername?:
       return;
     }
 
+    // Parse optional @agent prefix to target any agent in the swarm directly
+    let rawText = ctx.message.text.trim();
+    let targetGateOverride: any = undefined;
+    const prefixMatch = rawText.match(/^@(idee|idée|youssef|director|recherche|sources|salma|script|scenariste|karim|storyboard|prompts|visuels|images|leila|son|audio|bilal|video|vidéo|nadia)\s+(.+)$/i);
+    if (prefixMatch) {
+      const tag = prefixMatch[1].toLowerCase();
+      rawText = prefixMatch[2].trim();
+      if (['idee', 'idée', 'youssef', 'director'].includes(tag)) targetGateOverride = '1_idea';
+      else if (['recherche', 'sources', 'salma'].includes(tag)) targetGateOverride = '2_research';
+      else if (['script', 'scenariste', 'karim'].includes(tag)) targetGateOverride = '3_script';
+      else if (['storyboard', 'prompts'].includes(tag)) targetGateOverride = '4a_prompts';
+      else if (['visuels', 'images', 'leila'].includes(tag)) targetGateOverride = '4b_visuals';
+      else if (['son', 'audio', 'bilal'].includes(tag)) targetGateOverride = '5_audio';
+      else if (['video', 'vidéo', 'nadia'].includes(tag)) targetGateOverride = '6_video';
+    }
+
     await ctx.reply(
-      `📝 Ton retour est transmis à l'agent actif (et enregistré dans sa mémoire d'apprentissage)...`
+      targetGateOverride
+        ? `🎯 Retour transmis directement à la porte \`${targetGateOverride}\` (les étapes aval seront marquées ⚠️ À synchroniser)...`
+        : `📝 Ton retour est transmis à l'agent actif (et enregistré dans sa mémoire d'apprentissage)...`,
+      { parse_mode: 'Markdown' }
     );
-    const updated = await Orchestrator.requestRevision(targetId, ctx.message.text, true);
+    const updated = await Orchestrator.requestRevision(targetId, rawText, true, targetGateOverride);
     await sendGateUpdateToTelegram(ctx.chat.id, updated);
   });
 

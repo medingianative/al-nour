@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Studio Al Nour (النور) — Orchestrateur Agentique & Studio Virtuel 2D</title>
+  <title>Studio Al Nour (النور) — Essaim Agentique Non-Linéaire & Studio Virtuel 2D</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -16,6 +16,9 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #1E1B18; }
     ::-webkit-scrollbar-thumb { background: #4A4036; border-radius: 3px; }
+    input[type="range"] {
+      accent-color: #F4C44E;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -29,11 +32,11 @@
         <h1 class="text-base font-bold tracking-wide text-[#FAF5ED] flex items-center gap-2">
           STUDIO AL NOUR
           <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-[#2B3E54] text-[#9EC5D6] border border-[#3E5875]">
-            Harnais Zéro-Bruit • 6 Portes • 0,00 €
+            Essaim Non-Linéaire (DAG) • Cache SQLite • 0,00 €
           </span>
         </h1>
         <p class="text-xs text-[#A89C8E]">
-          Famille & Immeuble HLM • Validation Humaine Obligatoire & Autocritique entre chaque agent
+          Clique sur n'importe quel agent ou étape pour revenir en arrière, éditer un plan et propager en parallèle
         </p>
       </div>
     </div>
@@ -56,10 +59,17 @@
     </div>
   </header>
 
-  <!-- 6 Validation Gates Stepper Bar -->
-  <div class="bg-[#1A1715] border-b border-[#2E2924] px-5 py-2.5 flex items-center justify-between gap-2 overflow-x-auto">
-    <div class="flex items-center gap-1.5 text-xs" id="gateStepper"></div>
+  <!-- Non-Linear Swarm Stepper Bar (Clickable at any time + Parallel Sync CTA) -->
+  <div class="bg-[#1A1715] border-b border-[#2E2924] px-5 py-2.5 flex flex-wrap items-center justify-between gap-2 overflow-x-auto">
+    <div class="flex items-center gap-1.5 text-xs flex-wrap" id="gateStepper"></div>
     <div class="flex items-center gap-2 text-xs">
+      <button
+        id="btnParallelSwarmHeader"
+        onclick="triggerParallelSwarmSync()"
+        class="hidden px-3 py-1 rounded-lg bg-gradient-to-r from-[#F4C44E] to-[#E29A3B] hover:opacity-95 text-[#161412] font-bold text-xs shadow transition flex items-center gap-1.5"
+      >
+        ⚡ Synchroniser l'Essaim en Parallèle (Visuels + Audio + Vidéo)
+      </button>
       <span class="text-[#A89C8E]">Épisodes :</span>
       <select
         id="episodeSelect"
@@ -70,7 +80,7 @@
   </div>
 
   <!-- Main Workspace Grid -->
-  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 max-w-[1600px] w-full mx-auto">
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 max-w-[1640px] w-full mx-auto">
     <!-- Left Column (7 cols): 2D Virtual Studio Canvas + Live Multimedia Preview -->
     <div class="lg:col-span-7 flex flex-col gap-4">
       <!-- 2D Virtual Studio Card -->
@@ -78,10 +88,10 @@
         <div class="flex items-center justify-between mb-2">
           <div>
             <h2 class="text-sm font-bold text-[#FAF5ED] flex items-center gap-2">
-              🏢 Studio Virtuel 2D — Les 6 Postes de Travail d’Al Nour
+              🏢 Studio Virtuel 2D Interactif — Clique sur un Agent pour lui parler ou modifier son étape
             </h2>
             <p class="text-xs text-[#A89C8E]" id="studioStatusBanner">
-              Chaque agent s'arrête après son autocritique et attend ta validation pour transmettre le dossier doré.
+              Astuce : Clique directement sur Youssef, Salma, Karim, Leïla, Bilal ou Nadia dans le bureau 2D ci-dessous !
             </p>
           </div>
           <span id="activeGateBadge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#2E2924] text-[#F4C44E]">
@@ -93,78 +103,123 @@
           id="virtualStudioCanvas"
           width="860"
           height="430"
-          class="w-full rounded-xl border border-[#332C25] bg-[#141210] block"
+          class="w-full rounded-xl border border-[#332C25] bg-[#141210] block cursor-pointer"
+          title="Clique sur le bureau d'un agent pour ouvrir et modifier son étape"
         ></canvas>
       </div>
 
-      <!-- Bottom Left: Visual Storyboard 9:16 Gallery & Video Player -->
+      <!-- Bottom Left: Visual Storyboard 9:16 Gallery, Inline Script Scene Editor & Video Player -->
       <div class="bg-[#1E1B18] border border-[#2E2924] rounded-2xl p-4 flex-1">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-sm font-bold text-[#FAF5ED]">
-            🎞️ Production Multimédia 9:16 (Plans du Bâtiment HLM, Famille, Audio & Master MP4)
+            🎞️ Table de Montage Non-Linéaire (Édition Plan par Plan, Storyboard 9:16, Audio & Master MP4)
           </h3>
-          <span class="text-xs text-[#A89C8E]">Format 1080×1920 • Sans Visage • 0,00 €</span>
+          <span class="text-xs text-[#A89C8E]">Format 1080×1920 • Cache Vocal SQLite • 0,00 €</span>
         </div>
         <div id="mediaShowcase" class="space-y-4"></div>
       </div>
     </div>
 
-    <!-- Right Column (5 cols): Tabs for Telegram Control, HLM Residents, Harness & Memory -->
+    <!-- Right Column (5 cols): Tabs for Telegram/Swarm Control, Voice Lab, TikTok & RPM, Monitoring, HLM Residents, Harness -->
     <div class="lg:col-span-5 flex flex-col bg-[#1E1B18] border border-[#2E2924] rounded-2xl overflow-hidden">
-      <!-- Tab Headers -->
-      <div class="grid grid-cols-4 border-b border-[#2E2924] bg-[#161412] text-xs font-semibold">
+      <!-- Tab Headers (6 Tabs) -->
+      <div class="grid grid-cols-6 border-b border-[#2E2924] bg-[#161412] text-[11px] font-semibold">
         <button
           onclick="switchRightTab('telegram')"
           id="tab-btn-telegram"
-          class="py-3 px-1.5 border-b-2 border-[#F4C44E] text-[#F4C44E] bg-[#1E1B18] transition truncate"
+          class="py-3 px-1 border-b-2 border-[#F4C44E] text-[#F4C44E] bg-[#1E1B18] transition truncate"
+          title="Contrôle Essaim & Critique"
         >
-          📱 Telegram & Critique
+          🎯 Essaim
         </button>
         <button
           onclick="switchRightTab('voicelab')"
           id="tab-btn-voicelab"
-          class="py-3 px-1.5 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          class="py-3 px-1 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          title="Voice Lab Gemini 3.8 + Qwen3"
         >
-          🎙️ Voice Lab
+          🎙️ Voix
+        </button>
+        <button
+          onclick="switchRightTab('tiktok')"
+          id="tab-btn-tiktok"
+          class="py-3 px-1 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          title="Kit TikTok & Simulateur RPM"
+        >
+          📈 TikTok/RPM
+        </button>
+        <button
+          onclick="switchRightTab('monitoring')"
+          id="tab-btn-monitoring"
+          class="py-3 px-1 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          title="Monitoring Modèles, Tokens & Coûts"
+        >
+          📊 Monitoring
         </button>
         <button
           onclick="switchRightTab('residents')"
           id="tab-btn-residents"
-          class="py-3 px-1.5 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          class="py-3 px-1 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          title="Habitants du Bâtiment HLM"
         >
-          🏢 Habitants HLM
+          🏢 Habitants
         </button>
         <button
           onclick="switchRightTab('harness')"
           id="tab-btn-harness"
-          class="py-3 px-1.5 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          class="py-3 px-1 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate"
+          title="Harnais & Mémoire SQLite"
         >
           🧠 Harnais
         </button>
       </div>
 
-      <!-- Tab 1: Telegram Control & Self-Critique Gate Inspector -->
+      <!-- Tab 1: Swarm Control, Telegram Sync & Direct Agent Revision -->
       <div id="tab-telegram" class="p-4 flex-1 flex flex-col justify-between space-y-4 overflow-y-auto">
         <div class="space-y-3">
           <div class="flex items-center justify-between text-xs bg-[#141210] px-3 py-2 rounded-lg border border-[#2E2924]">
             <span class="text-[#A89C8E]">Synchronisation Bot Telegram :</span>
-            <span id="tgBotStatus" class="font-medium text-[#70C18C]">Simulé en direct + Prêt pour Token BotFather</span>
+            <span id="tgBotStatus" class="font-medium text-[#70C18C]">Simulé en direct + Commandes @agent actives</span>
+          </div>
+
+          <!-- Quick Agent Jump Bar -->
+          <div class="p-2.5 rounded-xl bg-[#141210] border border-[#2E2924] space-y-1.5">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="font-bold text-[#F4C44E]">🧭 Navigation Libre dans l'Essaim :</span>
+              <span class="text-[#A89C8E]">Reviens sur n'importe quel agent sans perdre la suite</span>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-[11px]" id="quickJumpButtons"></div>
           </div>
 
           <!-- Active Deliverable + Self-Critique Card -->
           <div id="telegramCardContainer" class="space-y-3"></div>
         </div>
 
-        <!-- User Critique / Revision Input Box (Teaches Agent Memory!) -->
+        <!-- User Critique / Revision Input Box with Direct Agent Target Selector -->
         <div class="pt-3 border-t border-[#2E2924] space-y-2">
-          <label class="block text-xs font-semibold text-[#F4C44E]">
-            ✍️ Donner une consigne / critique à l’agent actif (met à jour sa mémoire) :
-          </label>
+          <div class="flex items-center justify-between gap-2">
+            <label class="block text-xs font-semibold text-[#F4C44E]">
+              ✍️ Donner une consigne à un agent (ou tape `@script ...`, `@son ...`) :
+            </label>
+            <select
+              id="targetGateSelect"
+              class="bg-[#141210] border border-[#38312A] rounded px-2 py-1 text-[11px] text-[#FAF5ED]"
+            >
+              <option value="">🎯 Agent affiché actuellement</option>
+              <option value="1_idea">1. Youssef (Idée & Casting)</option>
+              <option value="2_research">2. Salma (Sources & Éthique)</option>
+              <option value="3_script">3. Karim (Script & Dialogues)</option>
+              <option value="4a_prompts">4a. Leïla (Storyboard 2D)</option>
+              <option value="4b_visuals">4b. Leïla (Images 9:16)</option>
+              <option value="5_audio">5. Bilal (Voix-Off & Ambiance)</option>
+              <option value="6_video">6. Nadia (Montage MP4)</option>
+            </select>
+          </div>
           <div class="flex gap-2">
             <input
               id="revisionInput"
               type="text"
-              placeholder="Ex: Insiste davantage sur la rencontre dans le hall du HLM avec M. Martin..."
+              placeholder="Ex: Dans le script, fais dialoguer davantage Adam et Grand-père Ibrahim..."
               class="flex-1 bg-[#141210] border border-[#38312A] rounded-lg px-3 py-2 text-xs text-[#FAF5ED] focus:outline-none focus:border-[#F4C44E]"
             />
             <button
@@ -177,7 +232,7 @@
         </div>
       </div>
 
-      <!-- Tab Voice Lab: Audition & Validate Character Voices -->
+      <!-- Tab 2: Voice Lab: Audition & Validate Character Voices -->
       <div id="tab-voicelab" class="hidden p-4 flex-1 space-y-4 overflow-y-auto">
         <div>
           <h3 class="text-sm font-bold text-[#FAF5ED] mb-1">
@@ -198,12 +253,12 @@
               <option value="tariq">Tariq • Père Ingénieur (Homme)</option>
               <option value="amina">Amina • Mère Infirmière (Femme)</option>
               <option value="khadija">Grand-mère Khadija (Femme mûre)</option>
-              <option value="adam">Adam • 10 ans (Garçon)</option>
-              <option value="lina">Lina • 6 ans (Fille)</option>
+              <option value="adam">Adam • 10 ans (Garçon Qwen3)</option>
+              <option value="lina">Lina • 6 ans (Fille Qwen3)</option>
               <option value="martin">M. Martin • Voisin (Homme)</option>
               <option value="narrator">Narrateur Al Nour (Homme)</option>
             </select>
-            <input id="customVoiceText" placeholder="Ex: Assalamou Alaykoum M. Martin, un grand merci !" class="flex-1 bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
+            <input id="customVoiceText" placeholder="Ex: Assalamou Alaykoum M. Martin, Bismillah !" class="flex-1 bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
             <button onclick="auditionCustomVoice()" class="px-3 py-1.5 rounded bg-[#F4C44E] hover:bg-[#E2B03B] text-[#161412] font-semibold">
               Générer
             </button>
@@ -212,7 +267,99 @@
         </div>
       </div>
 
-      <!-- Tab 2: HLM Building Residents Manager -->
+      <!-- Tab 3: TikTok Publishing Kit & Interactive RPM Revenue Simulator -->
+      <div id="tab-tiktok" class="hidden p-4 flex-1 space-y-4 overflow-y-auto text-xs">
+        <div>
+          <h3 class="text-sm font-bold text-[#FAF5ED] mb-1">
+            📈 Kit Publication TikTok & Simulateur de Revenus RPM (Creator Rewards Program)
+          </h3>
+          <p class="text-[#A89C8E]">
+            Les épisodes Al Nour durent 45 à 60s (format 9:16 original) et sont éligibles à la monétisation TikTok France / Europe dès 10 000 abonnés.
+          </p>
+        </div>
+
+        <!-- Interactive RPM Revenue Simulator Card -->
+        <div class="p-3.5 rounded-xl bg-[#141210] border border-[#F4C44E]/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[#F4C44E] text-xs">💰 Simulateur Interactif de Revenus TikTok (France / Europe)</span>
+            <span class="px-2 py-0.5 rounded bg-[#2A3B28] text-[#8CD99E] text-[10px] font-semibold">Coût Prod: 0,00 € (Marge 100%)</span>
+          </div>
+
+          <div class="space-y-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-[#A89C8E]">👁️ Vues estimées par vidéo :</span>
+                <span id="simViewsLabel" class="font-bold text-[#FAF5ED]">150 000 vues</span>
+              </div>
+              <input id="simViewsSlider" type="range" min="10000" max="2000000" step="10000" value="150000" oninput="updateTikTokSimulator()" class="w-full" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-[#A89C8E]">⏱️ Part de vues qualifiées (&gt;5s sur Pour Toi) :</span>
+                <span id="simQualLabel" class="font-bold text-[#FAF5ED]">62 %</span>
+              </div>
+              <input id="simQualSlider" type="range" min="30" max="85" step="1" value="62" oninput="updateTikTokSimulator()" class="w-full" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-[#A89C8E]">💶 RPM TikTok France/Europe (Niche Éducative/Histoire) :</span>
+                <span id="simRpmLabel" class="font-bold text-[#F4C44E]">0,80 € / 1k vues qualifiées</span>
+              </div>
+              <input id="simRpmSlider" type="range" min="0.35" max="1.40" step="0.05" value="0.80" oninput="updateTikTokSimulator()" class="w-full" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-[#A89C8E]">📅 Rythme de publication mensuel :</span>
+                <span id="simFreqLabel" class="font-bold text-[#FAF5ED]">30 vidéos / mois (1/jour)</span>
+              </div>
+              <input id="simFreqSlider" type="range" min="4" max="60" step="1" value="30" oninput="updateTikTokSimulator()" class="w-full" />
+            </div>
+          </div>
+
+          <!-- Calculated Earnings Grid -->
+          <div class="grid grid-cols-3 gap-2 pt-2 border-t border-[#25211D] text-center">
+            <div class="p-2 rounded-lg bg-[#1E1B18] border border-[#2E2924]">
+              <div class="text-[10px] text-[#A89C8E]">Par Vidéo</div>
+              <div id="simPerVideoEur" class="text-sm font-bold text-[#F4C44E] mt-0.5">74,40 €</div>
+            </div>
+            <div class="p-2 rounded-lg bg-[#1E1B18] border border-[#3E593B]">
+              <div class="text-[10px] text-[#A89C8E]">Par Mois (30 vid.)</div>
+              <div id="simPerMonthEur" class="text-sm font-bold text-[#8CD99E] mt-0.5">2 232 €</div>
+            </div>
+            <div class="p-2 rounded-lg bg-[#1E1B18] border border-[#2E2924]">
+              <div class="text-[10px] text-[#A89C8E]">Projection Annuelle</div>
+              <div id="simPerYearEur" class="text-sm font-bold text-[#9EC5D6] mt-0.5">26 784 €</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ready-to-Copy TikTok Descriptions & Hashtags -->
+        <div id="tiktokCaptionsContainer" class="space-y-3"></div>
+      </div>
+
+      <!-- Tab 4: Monitoring Dashboard (Models, Tokens, Voice Cache & Costs) -->
+      <div id="tab-monitoring" class="hidden p-4 flex-1 space-y-4 overflow-y-auto text-xs">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-[#FAF5ED]">
+              📊 Monitoring Temps Réel — Stack IA, Tokens, Cache Vocal & Coûts
+            </h3>
+            <p class="text-[#A89C8E]">
+              Suivi complet de la consommation de chaque agent et des économies réalisées grâce au cache SQLite.
+            </p>
+          </div>
+          <button onclick="fetchStudioState()" class="px-2.5 py-1 rounded bg-[#25211D] hover:bg-[#332D27] text-[#F4C44E] border border-[#38312A]">
+            🔄 Actualiser
+          </button>
+        </div>
+
+        <div id="monitoringDashboardContent" class="space-y-4"></div>
+      </div>
+
+      <!-- Tab 5: HLM Building Residents Manager -->
       <div id="tab-residents" class="hidden p-4 flex-1 space-y-4 overflow-y-auto">
         <div>
           <h3 class="text-sm font-bold text-[#FAF5ED] mb-1">
@@ -241,7 +388,7 @@
         </div>
       </div>
 
-      <!-- Tab 3: Agent Harness, Model Routing & Learned Memory -->
+      <!-- Tab 6: Agent Harness, Model Routing & Learned Memory -->
       <div id="tab-harness" class="hidden p-4 flex-1 space-y-4 overflow-y-auto text-xs">
         <div>
           <h3 class="text-sm font-bold text-[#FAF5ED] mb-1">
@@ -264,49 +411,68 @@
 
   <script>
     const GATES = [
-      { id: '1_idea', label: '1. Idée & Casting HLM', agent: 'director' },
-      { id: '2_research', label: '2. Sources & Éthique', agent: 'researcher' },
-      { id: '3_script', label: '3. Script & Hook 50s', agent: 'scriptwriter' },
-      { id: '4a_prompts', label: '4a. Storyboard 2D', agent: 'illustrator' },
-      { id: '4b_visuals', label: '4b. Images 9:16', agent: 'illustrator' },
-      { id: '5_audio', label: '5. Voix & Phonétique', agent: 'sound_engineer' },
-      { id: '6_video', label: '6. Montage MP4', agent: 'video_editor' }
+      { id: '1_idea', stepKey: 'idea', label: '1. Idée & Casting', short: '1.Idée', agent: 'director' },
+      { id: '2_research', stepKey: 'research', label: '2. Sources & Éthique', short: '2.Sources', agent: 'researcher' },
+      { id: '3_script', stepKey: 'script', label: '3. Script & Dialogues', short: '3.Script', agent: 'scriptwriter' },
+      { id: '4a_prompts', stepKey: 'prompts', label: '4a. Storyboard 2D', short: '4a.Story', agent: 'illustrator' },
+      { id: '4b_visuals', stepKey: 'visuals', label: '4b. Images 9:16', short: '4b.Visuels', agent: 'illustrator' },
+      { id: '5_audio', stepKey: 'audio', label: '5. Voix & Phonétique', short: '5.Audio', agent: 'sound_engineer' },
+      { id: '6_video', stepKey: 'video', label: '6. Montage MP4', short: '6.Vidéo', agent: 'video_editor' }
     ];
 
     const STUDIO_DESKS = [
-      { id: 'director', name: 'Youssef', role: '1. Directeur Studio', x: 145, y: 125, color: '#4E6741', skin: '#E2B191', hair: '#2D221B', hijab: false },
-      { id: 'researcher', name: 'Salma', role: '2. Chercheuse Éthique', x: 430, y: 125, color: '#C86D51', skin: '#E9BC9E', hair: '#2D221B', hijab: true },
-      { id: 'scriptwriter', name: 'Karim', role: '3. Scénariste TikTok', x: 715, y: 125, color: '#2B3E54', skin: '#E7B99A', hair: '#33251D', hijab: false },
-      { id: 'illustrator', name: 'Leïla', role: '4. Illustratrice 2D', x: 145, y: 315, color: '#E2A857', skin: '#EBBFA2', hair: '#33251D', hijab: true },
-      { id: 'sound_engineer', name: 'Bilal', role: '5. Ingénieur Son', x: 430, y: 315, color: '#6E5D50', skin: '#DDA988', hair: '#2D221B', hijab: false },
-      { id: 'video_editor', name: 'Nadia', role: '6. Monteuse 9:16', x: 715, y: 315, color: '#9B8EA9', skin: '#E5B698', hair: '#2D221B', hijab: true }
+      { id: 'director', gateId: '1_idea', name: 'Youssef', role: '1. Directeur Studio', x: 145, y: 125, color: '#4E6741', skin: '#E2B191', hair: '#2D221B', hijab: false },
+      { id: 'researcher', gateId: '2_research', name: 'Salma', role: '2. Chercheuse Éthique', x: 430, y: 125, color: '#C86D51', skin: '#E9BC9E', hair: '#2D221B', hijab: true },
+      { id: 'scriptwriter', gateId: '3_script', name: 'Karim', role: '3. Scénariste TikTok', x: 715, y: 125, color: '#2B3E54', skin: '#E7B99A', hair: '#33251D', hijab: false },
+      { id: 'illustrator', gateId: '4b_visuals', name: 'Leïla', role: '4. Illustratrice 2D', x: 145, y: 315, color: '#E2A857', skin: '#EBBFA2', hair: '#33251D', hijab: true },
+      { id: 'sound_engineer', gateId: '5_audio', name: 'Bilal', role: '5. Ingénieur Son', x: 430, y: 315, color: '#6E5D50', skin: '#DDA988', hair: '#2D221B', hijab: false },
+      { id: 'video_editor', gateId: '6_video', name: 'Nadia', role: '6. Monteuse 9:16', x: 715, y: 315, color: '#9B8EA9', skin: '#E5B698', hair: '#2D221B', hijab: true }
+    ];
+
+    const SPEAKER_OPTIONS = [
+      { id: 'narrator', label: 'Narrateur Al Nour (Gemini)' },
+      { id: 'tariq', label: 'Tariq • Père (Gemini)' },
+      { id: 'amina', label: 'Amina • Mère (Gemini)' },
+      { id: 'ibrahim', label: 'Grand-père Ibrahim (Gemini)' },
+      { id: 'khadija', label: 'Grand-mère Khadija (Gemini)' },
+      { id: 'adam', label: 'Adam • 10 ans (Qwen3 Enfant)' },
+      { id: 'lina', label: 'Lina • 6 ans (Qwen3 Enfant)' },
+      { id: 'martin', label: 'M. Martin • Voisin (Gemini)' }
     ];
 
     let appState = {
       episodes: [],
       activeEpisode: null,
+      selectedEpisodeId: '',
       telegramPreview: null,
       residents: [],
       agentModels: [],
       learnedRules: [],
+      voiceProfiles: [],
+      monitoring: null,
       isBusy: false,
       animTime: 0,
       folderPos: { x: 145, y: 125, targetX: 145, targetY: 125 }
     };
 
     async function fetchStudioState() {
-      const res = await fetch('/api/state');
+      const query = appState.selectedEpisodeId ? `?episodeId=${encodeURIComponent(appState.selectedEpisodeId)}` : '';
+      const res = await fetch(`/api/state${query}`);
       const data = await res.json();
       appState.episodes = data.episodes || [];
       appState.activeEpisode = data.activeEpisode;
+      if (appState.activeEpisode) {
+        appState.selectedEpisodeId = appState.activeEpisode.id;
+      }
       appState.telegramPreview = data.telegramPreview;
       appState.residents = data.residents || [];
       appState.agentModels = data.agentModels || [];
       appState.learnedRules = data.learnedRules || [];
       appState.voiceProfiles = data.voiceProfiles || [];
+      appState.monitoring = data.monitoring || null;
 
       if (data.telegramBotActive) {
-        document.getElementById('tgBotStatus').textContent = '🟢 Connecté en direct à Telegram';
+        document.getElementById('tgBotStatus').textContent = '🟢 Connecté en direct à Telegram (@agent actif)';
       }
 
       updateFolderTargetFromEpisode();
@@ -324,12 +490,27 @@
       }
     }
 
+    function hasStaleSteps(ep) {
+      if (!ep || !ep.steps) return false;
+      return Boolean(
+        ep.steps.research?.stale ||
+        ep.steps.script?.stale ||
+        ep.steps.prompts?.stale ||
+        ep.steps.visuals?.stale ||
+        ep.steps.audio?.stale ||
+        ep.steps.video?.stale
+      );
+    }
+
     function renderAllUI() {
       renderStepper();
+      renderQuickJumpButtons();
       renderEpisodeSelector();
       renderTelegramCard();
       renderMediaShowcase();
       renderVoiceLabTab();
+      renderTikTokTab();
+      renderMonitoringTab();
       renderResidentsTab();
       renderHarnessTab();
     }
@@ -338,28 +519,141 @@
       const container = document.getElementById('gateStepper');
       const ep = appState.activeEpisode;
       const currentGate = ep ? ep.currentGate : '1_idea';
-      const currentIdx = GATES.findIndex(g => g.id === currentGate);
+      const headerSyncBtn = document.getElementById('btnParallelSwarmHeader');
 
-      container.innerHTML = GATES.map((g, idx) => {
-        const isDone = currentGate === 'completed' || (currentIdx > idx);
+      if (ep && (hasStaleSteps(ep) || ep.steps.script)) {
+        headerSyncBtn.classList.remove('hidden');
+        headerSyncBtn.textContent = hasStaleSteps(ep)
+          ? '⚡ Synchroniser les étapes modifiées en Parallèle (Cache SQLite)'
+          : '⚡ Propager Visuels + Audio + Vidéo en Parallèle';
+      } else {
+        headerSyncBtn.classList.add('hidden');
+      }
+
+      container.innerHTML = GATES.map(g => {
+        const stepObj = ep && ep.steps ? ep.steps[g.stepKey] : null;
         const isCurrent = currentGate === g.id;
-        const cls = isCurrent
-          ? 'bg-[#F4C44E] text-[#161412] font-bold shadow'
-          : isDone
-          ? 'bg-[#2A3B28] text-[#8CD99E] border border-[#3E593B]'
-          : 'bg-[#25211D] text-[#8C8073]';
+        const isStale = Boolean(stepObj && stepObj.stale);
+        const isDone = Boolean(stepObj && !stepObj.stale);
+
+        let cls = 'bg-[#25211D] text-[#8C8073] hover:bg-[#302A24] cursor-pointer';
+        let icon = '○';
+        if (isCurrent) {
+          cls = 'bg-[#F4C44E] text-[#161412] font-bold shadow cursor-pointer';
+          icon = '●';
+        } else if (isStale) {
+          cls = 'bg-[#3D261A] text-[#F4A261] border border-[#E76F51] font-semibold cursor-pointer animate-pulse';
+          icon = '⚠️';
+        } else if (isDone) {
+          cls = 'bg-[#2A3B28] text-[#8CD99E] border border-[#3E593B] hover:bg-[#344932] cursor-pointer';
+          icon = '✓';
+        }
+
         return `
-          <div class="px-2.5 py-1 rounded-md whitespace-nowrap flex items-center gap-1 ${cls}">
-            <span>${isDone ? '✓' : isCurrent ? '●' : '○'}</span>
+          <button
+            onclick="selectGateTo('${g.id}')"
+            title="Cliquer pour ouvrir ou modifier ${g.label}"
+            class="px-2.5 py-1 rounded-md whitespace-nowrap flex items-center gap-1 transition ${cls}"
+          >
+            <span>${icon}</span>
             <span>${g.label}</span>
-          </div>
+            ${isStale ? '<span class="text-[10px] underline ml-0.5">À sync</span>' : ''}
+          </button>
         `;
       }).join('<span class="text-[#4A4036]">→</span>');
 
       document.getElementById('activeGateBadge').textContent =
         currentGate === 'completed'
-          ? '🎉 Épisode Terminé'
-          : `Porte active : ${currentGate} (Attente validation)`;
+          ? '🎉 Épisode Terminé (Navigation Libre)'
+          : `Porte active : ${currentGate}`;
+    }
+
+    function renderQuickJumpButtons() {
+      const container = document.getElementById('quickJumpButtons');
+      if (!container) return;
+      const ep = appState.activeEpisode;
+      const jumpTargets = [
+        { id: '1_idea', label: '1. Idée', stepKey: 'idea' },
+        { id: '2_research', label: '2. Sources', stepKey: 'research' },
+        { id: '3_script', label: '3. Script', stepKey: 'script' },
+        { id: '4b_visuals', label: '4. Visuels', stepKey: 'visuals' },
+        { id: '5_audio', label: '5. Audio', stepKey: 'audio' },
+        { id: '6_video', label: '6. Vidéo', stepKey: 'video' }
+      ];
+      container.innerHTML = jumpTargets
+        .map(t => {
+          const isCurrent = ep && ep.currentGate === t.id;
+          const isStale = ep && ep.steps && ep.steps[t.stepKey]?.stale;
+          return `
+            <button
+              onclick="selectGateTo('${t.id}')"
+              class="py-1.5 px-2 rounded-lg font-semibold border transition truncate ${
+                isCurrent
+                  ? 'bg-[#F4C44E] text-[#161412] border-[#F4C44E]'
+                  : isStale
+                  ? 'bg-[#3D261A] text-[#F4A261] border-[#E76F51]'
+                  : 'bg-[#1E1B18] hover:bg-[#2A2520] text-[#D8CFC4] border-[#38312A]'
+              }"
+            >
+              ${isStale ? '⚠️ ' : ''}${t.label}
+            </button>
+          `;
+        })
+        .join('');
+    }
+
+    async function selectGateTo(gateId) {
+      if (!appState.activeEpisode || appState.isBusy) return;
+      appState.isBusy = true;
+      renderTelegramCard();
+      await fetch('/api/episodes/select-gate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episodeId: appState.activeEpisode.id, gateId })
+      });
+      appState.isBusy = false;
+      await fetchStudioState();
+    }
+
+    async function triggerParallelSwarmSync() {
+      if (!appState.activeEpisode || appState.isBusy) return;
+      appState.isBusy = true;
+      document.getElementById('studioStatusBanner').textContent =
+        '⚡ Essaim en Parallèle actif : Leïla (Visuels 9:16) et Bilal (Audio Multi-Voix + Cache SQLite) travaillent simultanément...';
+      renderTelegramCard();
+      await fetch('/api/episodes/swarm-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episodeId: appState.activeEpisode.id, includeVideo: true })
+      });
+      appState.isBusy = false;
+      await fetchStudioState();
+    }
+
+    async function saveInlineSceneEdit(sceneNumber) {
+      if (!appState.activeEpisode || appState.isBusy) return;
+      const textEl = document.getElementById(`inline-scene-text-${sceneNumber}`);
+      const speakerEl = document.getElementById(`inline-scene-speaker-${sceneNumber}`);
+      if (!textEl) return;
+      const spokenText = textEl.value.trim();
+      const speakerId = speakerEl ? speakerEl.value : undefined;
+      if (!spokenText) return;
+
+      const btn = document.getElementById(`btn-save-scene-${sceneNumber}`);
+      if (btn) btn.textContent = '⏳...';
+
+      await fetch('/api/episodes/edit-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          episodeId: appState.activeEpisode.id,
+          sceneNumber,
+          spokenText,
+          speakerId
+        })
+      });
+      if (btn) btn.textContent = '✅ Sauvé !';
+      await fetchStudioState();
     }
 
     function renderEpisodeSelector() {
@@ -373,7 +667,7 @@
           ep =>
             `<option value="${ep.id}" ${
               appState.activeEpisode && appState.activeEpisode.id === ep.id ? 'selected' : ''
-            }>${ep.topicPrompt.slice(0, 48)} (${ep.currentGate})</option>`
+            }>${ep.topicPrompt.slice(0, 44)} (${ep.currentGate})</option>`
         )
         .join('');
     }
@@ -392,7 +686,6 @@
         return;
       }
 
-      // Format Markdown-like text cleanly
       const htmlText = preview.text
         .replace(/\*([^*]+)\*/g, '<strong class="text-[#FAF5ED]">$1</strong>')
         .replace(/_([^_]+)_/g, '<em class="text-[#D5C7B8]">$1</em>')
@@ -402,22 +695,24 @@
       const buttonsHtml = preview.buttons
         .map(
           row => `
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-1.5">
             ${row
               .map(
                 btn => `
                 <button
                   onclick="handleTelegramAction('${btn.action}')"
                   ${appState.isBusy ? 'disabled' : ''}
-                  class="flex-1 py-2 px-3 rounded-lg font-semibold text-xs transition ${
+                  class="flex-1 py-1.5 px-2.5 rounded-lg font-semibold text-[11px] transition ${
                     btn.action.startsWith('approve:')
                       ? 'bg-[#4E6741] hover:bg-[#5E7B4F] text-white shadow'
+                      : btn.action.startsWith('swarm_sync:')
+                      ? 'bg-gradient-to-r from-[#F4C44E] to-[#E29A3B] text-[#161412] font-bold shadow'
                       : btn.action.startsWith('alt:')
                       ? 'bg-[#2B3E54] hover:bg-[#38506B] text-[#FAF5ED] border border-[#456282]'
                       : 'bg-[#25211D] hover:bg-[#332D27] text-[#E2A857] border border-[#3E352D]'
                   }"
                 >
-                  ${appState.isBusy ? '⏳ Traitement en cours...' : btn.label}
+                  ${appState.isBusy ? '⏳...' : btn.label}
                 </button>
               `
               )
@@ -430,7 +725,7 @@
       container.innerHTML = `
         <div class="bg-[#141210] border border-[#38312A] rounded-xl p-4 space-y-3 text-xs leading-relaxed">
           <div class="flex items-center justify-between border-b border-[#25211D] pb-2">
-            <span class="font-bold text-[#F4C44E]">📨 Message du Bot Telegram Al Nour</span>
+            <span class="font-bold text-[#F4C44E]">📨 Poste de Contrôle Agent & Telegram</span>
             <span class="text-[11px] font-mono text-[#8C8073]">ID: ${ep.id}</span>
           </div>
           <div class="text-[#D8CFC4]">${htmlText}</div>
@@ -449,20 +744,46 @@
 
       let html = '';
 
-      // 1. Final MP4 Video Player if Gate 6 reached
+      // Banner if any downstream step is stale (out_of_sync)
+      if (hasStaleSteps(ep)) {
+        html += `
+          <div class="p-3 rounded-xl bg-[#3D261A] border border-[#E76F51] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div>
+              <span class="font-bold text-[#F4A261] block">⚠️ Modification amont détectée — Étapes aval à synchroniser</span>
+              <span class="text-[#FAF5ED]">Grâce au Cache Vocal SQLite, seules les répliques modifiées seront régénérées (0 quota gaspillé).</span>
+            </div>
+            <button
+              onclick="triggerParallelSwarmSync()"
+              class="px-3.5 py-2 rounded-lg bg-[#F4C44E] hover:bg-[#E2B03B] text-[#161412] font-bold shadow transition"
+            >
+              ⚡ Synchroniser Visuels + Audio + Vidéo en Parallèle
+            </button>
+          </div>
+        `;
+      }
+
+      // 1. Final MP4 Video Player if Gate 6 exists
       if (ep.steps.video && ep.steps.video.deliverable.videoFileUrl) {
         const v = ep.steps.video.deliverable;
+        const isVideoStale = Boolean(ep.steps.video.stale);
         html += `
-          <div class="p-3.5 rounded-xl bg-[#141210] border-2 border-[#F4C44E] flex flex-col sm:flex-row items-center gap-4">
+          <div class="p-3.5 rounded-xl bg-[#141210] border-2 ${isVideoStale ? 'border-[#E76F51]' : 'border-[#F4C44E]'} flex flex-col sm:flex-row items-center gap-4">
             <video
-              src="${v.videoFileUrl}"
+              src="${v.videoFileUrl}?t=${encodeURIComponent(ep.steps.video.createdAt)}"
               controls
               playsinline
               class="w-44 h-78 rounded-lg border border-[#38312A] bg-black shadow-lg"
             ></video>
             <div class="flex-1 space-y-2 text-xs">
-              <div class="inline-block px-2 py-0.5 rounded bg-[#F4C44E] text-[#161412] font-bold">
-                🎬 MASTER FINAL TIKTOK 9:16 PRÊT
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="inline-block px-2 py-0.5 rounded bg-[#F4C44E] text-[#161412] font-bold">
+                  🎬 MASTER FINAL TIKTOK 9:16 PRÊT
+                </span>
+                ${
+                  isVideoStale
+                    ? '<span class="px-2 py-0.5 rounded bg-[#3D261A] text-[#F4A261] border border-[#E76F51] font-semibold">⚠️ À synchroniser avec le nouveau script/audio</span>'
+                    : ''
+                }
               </div>
               <p class="text-sm font-bold text-[#FAF5ED]">${ep.steps.idea?.deliverable.title || ep.topicPrompt}</p>
               <p class="text-[#A89C8E]">Format : ${v.resolution} • Durée : ${v.durationSec}s • Taille : ${v.fileSizeMb} Mo</p>
@@ -475,27 +796,99 @@
                 >
                   ⬇️ Télécharger la vidéo MP4 (9:16)
                 </a>
+                <button
+                  onclick="switchRightTab('tiktok')"
+                  class="px-3 py-1.5 rounded-lg bg-[#2B3E54] hover:bg-[#38506B] text-[#FAF5ED] border border-[#456282] font-semibold"
+                >
+                  📈 Ouvrir le Kit TikTok & Simulateur RPM
+                </button>
+                <button
+                  onclick="selectGateTo('3_script')"
+                  class="px-3 py-1.5 rounded-lg bg-[#25211D] hover:bg-[#332D27] text-[#F4C44E] border border-[#38312A] font-semibold"
+                >
+                  ✏️ Revenir modifier le Script (Porte 3)
+                </button>
               </div>
             </div>
           </div>
         `;
       }
 
-      // 2. Audio Player if Gate 5 reached
+      // 2. Audio Player if Gate 5 exists
       if (ep.steps.audio && ep.steps.audio.deliverable.audioFileUrl) {
         const a = ep.steps.audio.deliverable;
+        const isAudioStale = Boolean(ep.steps.audio.stale);
         html += `
-          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="p-3 rounded-xl bg-[#141210] border ${isAudioStale ? 'border-[#E76F51]' : 'border-[#2E2924]'} flex flex-wrap items-center justify-between gap-3 text-xs">
             <div>
-              <span class="font-bold text-[#F4C44E] block">🎙️ Piste Audio & Ambiance Halal (${a.durationSec}s)</span>
-              <span class="text-[#A89C8E]">${a.voiceEngineUsed} • Voix: ${a.voiceId} • Ambiance: ${a.ambientTrack}</span>
+              <span class="font-bold text-[#F4C44E] block">
+                🎙️ Piste Audio Multi-Voix & Ambiance Halal (${a.durationSec}s)
+                ${isAudioStale ? '<span class="ml-2 text-[#F4A261]">⚠️ À synchroniser</span>' : ''}
+              </span>
+              <span class="text-[#A89C8E]">${a.voiceEngineUsed} • Distribution: ${a.voiceId} • Ambiance: ${a.ambientTrack}</span>
             </div>
-            <audio src="${a.audioFileUrl}" controls class="h-8"></audio>
+            <audio src="${a.audioFileUrl}?t=${encodeURIComponent(ep.steps.audio.createdAt)}" controls class="h-8"></audio>
           </div>
         `;
       }
 
-      // 3. Visual Storyboard 9:16 Gallery (Gate 4b or 4a)
+      // 3. Inline Scene-by-Scene Script Editor (always available once Gate 3 Script exists!)
+      if (ep.steps.script && ep.steps.script.deliverable.scenes) {
+        const sDeliv = ep.steps.script.deliverable;
+        html += `
+          <div class="p-3.5 rounded-xl bg-[#141210] border border-[#2E2924] space-y-2.5 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="font-bold text-[#F4C44E]">✍️ Éditeur Non-Linéaire du Script (8 Plans & Voix par Personnage)</span>
+                <p class="text-[11px] text-[#A89C8E]">
+                  Modifie n'importe quelle réplique ou change le personnage qui parle : les 7 autres plans resteront en cache SQLite gratuit !
+                </p>
+              </div>
+              <button
+                onclick="triggerParallelSwarmSync()"
+                class="px-3 py-1.5 rounded-lg bg-[#F4C44E] hover:bg-[#E2B03B] text-[#161412] font-bold text-[11px] shadow"
+              >
+                ⚡ Propager les modifications en Parallèle
+              </button>
+            </div>
+            <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              ${sDeliv.scenes
+                .map(
+                  sc => `
+                <div class="p-2 rounded-lg bg-[#1E1B18] border border-[#2E2924] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <span class="font-bold text-[#F4C44E] whitespace-nowrap text-[11px]">Plan ${sc.sceneNumber} (${sc.durationSec}s)</span>
+                  <select
+                    id="inline-scene-speaker-${sc.sceneNumber}"
+                    class="bg-[#141210] border border-[#38312A] rounded px-2 py-1 text-[11px] text-[#FAF5ED]"
+                  >
+                    ${SPEAKER_OPTIONS.map(
+                      opt =>
+                        `<option value="${opt.id}" ${sc.speakerId === opt.id ? 'selected' : ''}>${opt.label}</option>`
+                    ).join('')}
+                  </select>
+                  <input
+                    id="inline-scene-text-${sc.sceneNumber}"
+                    type="text"
+                    value="${sc.spokenText.replace(/"/g, '&quot;')}"
+                    class="flex-1 bg-[#141210] border border-[#38312A] rounded px-2.5 py-1 text-xs text-[#FAF5ED] focus:border-[#F4C44E] focus:outline-none"
+                  />
+                  <button
+                    id="btn-save-scene-${sc.sceneNumber}"
+                    onclick="saveInlineSceneEdit(${sc.sceneNumber})"
+                    class="px-2.5 py-1 rounded bg-[#2B3E54] hover:bg-[#38506B] text-[#FAF5ED] font-semibold text-[11px] whitespace-nowrap"
+                  >
+                    💾 Sauver Plan ${sc.sceneNumber}
+                  </button>
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // 4. Visual Storyboard 9:16 Gallery (Gate 4b or 4a)
       const visualStep = ep.steps.visuals || ep.steps.prompts;
       if (visualStep && visualStep.deliverable.scenes) {
         const scenes = visualStep.deliverable.scenes;
@@ -523,7 +916,7 @@
                     <p class="text-[#D8CFC4] line-clamp-2 mb-1">"${sc.subtitleText}"</p>
                   </div>
                   <div class="pt-1 border-t border-[#25211D] flex items-center justify-between text-[10px] text-[#A89C8E]">
-                    <span>👥 ${sc.residentIds.length ? sc.residentIds.join(', ') : 'POV'}</span>
+                    <span>🗣️ ${sc.speakerDisplayName || sc.speakerId || 'Narrateur'}</span>
                     ${
                       sc.imageUrl
                         ? `<button onclick="regenScene(${sc.sceneNumber})" class="text-[#F4C44E] hover:underline">🔄</button>`
@@ -537,22 +930,208 @@
             </div>
           </div>
         `;
-      } else if (ep.steps.script) {
-        html += `
-          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] text-xs space-y-1.5">
-            <span class="font-bold text-[#F4C44E]">📜 Script complet (${ep.steps.script.deliverable.totalEstimatedDurationSec}s) :</span>
-            <p class="text-[#D8CFC4] italic leading-relaxed">« ${ep.steps.script.deliverable.fullNarrationText} »</p>
-          </div>
-        `;
-      } else {
+      } else if (!ep.steps.script) {
         html += `
           <div class="p-4 rounded-xl bg-[#141210] border border-[#2E2924] text-xs text-[#A89C8E]">
-            Valide les portes sur la droite pour voir apparaître progressivement le script, les 8 illustrations 9:16 du bâtiment HLM, la piste audio et la vidéo MP4 finale !
+            Valide les portes sur la droite (ou clique sur n'importe quelle étape en haut) pour générer le script, les 8 illustrations 9:16 du bâtiment HLM, la piste audio multi-personnages et la vidéo MP4 finale !
           </div>
         `;
       }
 
       container.innerHTML = html;
+    }
+
+    function updateTikTokSimulator() {
+      const views = Number(document.getElementById('simViewsSlider')?.value || 150000);
+      const qualPct = Number(document.getElementById('simQualSlider')?.value || 62);
+      const rpm = Number(document.getElementById('simRpmSlider')?.value || 0.8);
+      const freq = Number(document.getElementById('simFreqSlider')?.value || 30);
+
+      document.getElementById('simViewsLabel').textContent = `${views.toLocaleString('fr-FR')} vues`;
+      document.getElementById('simQualLabel').textContent = `${qualPct} %`;
+      document.getElementById('simRpmLabel').textContent = `${rpm.toFixed(2).replace('.', ',')} € / 1k vues qualifiées`;
+      document.getElementById('simFreqLabel').textContent = `${freq} vidéos / mois`;
+
+      const qualifiedViews = views * (qualPct / 100);
+      const perVideo = (qualifiedViews / 1000) * rpm;
+      const perMonth = perVideo * freq;
+      const perYear = perMonth * 12;
+
+      document.getElementById('simPerVideoEur').textContent = `${perVideo.toFixed(2).replace('.', ',')} €`;
+      document.getElementById('simPerMonthEur').textContent = `${Math.round(perMonth).toLocaleString('fr-FR')} €`;
+      document.getElementById('simPerYearEur').textContent = `${Math.round(perYear).toLocaleString('fr-FR')} €`;
+    }
+
+    function renderTikTokTab() {
+      updateTikTokSimulator();
+      const container = document.getElementById('tiktokCaptionsContainer');
+      if (!container) return;
+      const ep = appState.activeEpisode;
+      const title = ep?.steps?.idea?.deliverable?.title || ep?.topicPrompt || 'Le sourire dans le hall du bâtiment HLM';
+      const hook = ep?.steps?.script?.deliverable?.hookFirst3Seconds || title;
+      const moral =
+        ep?.steps?.script?.deliverable?.closingInvocationOrMoral ||
+        'La douceur et le bon voisinage apaisent les cœurs.';
+      const source =
+        ep?.steps?.research?.deliverable?.referenceCitation ||
+        'Hadîth authentique sur la bienveillance envers le voisin';
+
+      const variants = [
+        {
+          badge: '🥇 Variante 1 — Émotionnelle & Voisinage HLM (Recommandée)',
+          goal: 'Maximise le taux de complétion (Watch-Time) et les partages WhatsApp/TikTok',
+          text: `${hook}\n\nDans notre immeuble HLM « Résidence Les Cèdres », un simple geste de douceur a tout changé entre voisins. ${moral} 🌙🤝\n\n📖 Source : ${source}\n\n#AlNour #IslamDouceur #Voisinage #SagesseIslamique #Bienveillance #VivreEnsemble #HistoireMorale #PourToi #FYP`
+        },
+        {
+          badge: '💬 Variante 2 — Question Engageante (Booste l’Algorithme par les Commentaires)',
+          goal: 'Incite les spectateurs à raconter leur propre expérience en commentaire pendant que la vidéo tourne',
+          text: `Et vous, quelle est la plus belle attention qu'un voisin ait eue pour vous ? 🏢✨\n\n« ${hook} » — Un rappel sincère avec la famille Al Nour et M. Martin.\n\n${moral} 🤲\n\n#AlNour #RappelIslam #Voisins #Adab #CoeurApaise #HistoireDuJour #PourToi`
+        },
+        {
+          badge: '📚 Variante 3 — Éducative & Source Authentique',
+          goal: 'Optimisée pour les enregistrements en favoris (Saves) et le référencement SEO TikTok',
+          text: `📖 ${source} : « ${moral} »\n\nDécouvrez comment Tariq, Amina, Grand-père Ibrahim et les enfants mettent en pratique cet enseignement au quotidien dans leur résidence. 🌙\n\n#AlNour #HadithAuthentique #SagesseProphétique #EducationBienveillante #IslamFrance #PourToi`
+        }
+      ];
+
+      container.innerHTML = `
+        <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] flex items-center justify-between text-[11px]">
+          <span class="text-[#A89C8E]">⏰ <b>Créneaux de publication optimaux (France) :</b></span>
+          <span class="text-[#F4C44E] font-semibold">Mar–Jeu 18h30–20h30 • Ven 11h30 & 20h00 • Dim 19h00</span>
+        </div>
+        ${variants
+          .map(
+            (v, idx) => `
+          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold text-[#FAF5ED]">${v.badge}</span>
+              <button
+                onclick="copyTikTokCaption(${idx})"
+                id="btn-copy-tt-${idx}"
+                class="px-2.5 py-1 rounded bg-[#F4C44E] hover:bg-[#E2B03B] text-[#161412] font-bold text-[11px] whitespace-nowrap"
+              >
+                📋 Copier
+              </button>
+            </div>
+            <p class="text-[11px] text-[#A89C8E]">${v.goal}</p>
+            <textarea
+              id="tt-caption-box-${idx}"
+              rows="4"
+              readonly
+              class="w-full bg-[#1E1B18] border border-[#38312A] rounded-lg p-2 text-[11px] text-[#D8CFC4] font-mono focus:outline-none"
+            >${v.text}</textarea>
+          </div>
+        `
+          )
+          .join('')}
+      `;
+    }
+
+    function copyTikTokCaption(idx) {
+      const box = document.getElementById(`tt-caption-box-${idx}`);
+      const btn = document.getElementById(`btn-copy-tt-${idx}`);
+      if (!box) return;
+      navigator.clipboard.writeText(box.value);
+      if (btn) {
+        btn.textContent = '✅ Copié !';
+        setTimeout(() => {
+          btn.textContent = '📋 Copier';
+        }, 2000);
+      }
+    }
+
+    function renderMonitoringTab() {
+      const container = document.getElementById('monitoringDashboardContent');
+      if (!container) return;
+      const m = appState.monitoring;
+      if (!m) {
+        container.innerHTML = '<p class="text-[#8C8073]">Chargement des métriques du studio...</p>';
+        return;
+      }
+
+      const engineEntries = Object.entries(m.voiceCache?.enginesBreakdown || {});
+      const engineBadges =
+        engineEntries.length > 0
+          ? engineEntries
+              .map(
+                ([eng, cnt]) =>
+                  `<span class="px-2 py-0.5 rounded bg-[#25211D] text-[#F4C44E] font-mono text-[10px]">${eng}: ${cnt} seg.</span>`
+              )
+              .join(' ')
+          : '<span class="text-[#8C8073]">Aucun segment en cache</span>';
+
+      container.innerHTML = `
+        <!-- Top KPI Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="p-3 rounded-xl bg-[#141210] border border-[#3E593B]">
+            <div class="text-[10px] text-[#A89C8E]">Coût Réel Facturé</div>
+            <div class="text-base font-bold text-[#8CD99E] mt-0.5">${m.actualCostEur.toFixed(2).replace('.', ',')} €</div>
+            <div class="text-[10px] text-[#70C18C]">Économisé: ~${m.estimatedCommercialSavedEur.toFixed(2).replace('.', ',')} €</div>
+          </div>
+          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924]">
+            <div class="text-[10px] text-[#A89C8E]">Tokens LLM Cumulés</div>
+            <div class="text-base font-bold text-[#FAF5ED] mt-0.5">${m.totalTokens.toLocaleString('fr-FR')}</div>
+            <div class="text-[10px] text-[#8C8073]">${m.totalInputTokens} in / ${m.totalOutputTokens} out</div>
+          </div>
+          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924]">
+            <div class="text-[10px] text-[#A89C8E]">Cache Vocal SQLite</div>
+            <div class="text-base font-bold text-[#F4C44E] mt-0.5">${m.voiceCache.totalCachedSegments} répliques</div>
+            <div class="text-[10px] text-[#8C8073]">${m.voiceCache.totalDurationSec}s d'audio à 0 quota</div>
+          </div>
+          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924]">
+            <div class="text-[10px] text-[#A89C8E]">Épisodes & Étapes</div>
+            <div class="text-base font-bold text-[#9EC5D6] mt-0.5">${m.totalEpisodes} ép. (${m.completedEpisodes} finis)</div>
+            <div class="text-[10px] text-[#8C8073]">${m.totalStepsExecuted} exécutions d'agents</div>
+          </div>
+        </div>
+
+        <!-- Hybrid TTS Voice Stack Card -->
+        <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[#F4C44E]">🎙️ Stack Vocale Hybride & Répartition du Cache SQLite</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 pb-1">${engineBadges}</div>
+          <div class="space-y-1.5">
+            ${(m.ttsStack || [])
+              .map(
+                t => `
+              <div class="p-2 rounded-lg bg-[#1E1B18] border border-[#2E2924] flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+                <div>
+                  <span class="font-bold text-[#FAF5ED]">${t.tier} :</span>
+                  <span class="text-[#9EC5D6] font-mono ml-1">${t.engine}</span>
+                  <div class="text-[10px] text-[#A89C8E]">${t.voices}</div>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-[#2A3B28] text-[#8CD99E] font-semibold text-[10px] whitespace-nowrap">${t.cost}</span>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+
+        <!-- Per-Agent LLM Stack & Token Consumption -->
+        <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] space-y-2">
+          <span class="font-bold text-[#F4C44E] block">🤖 Stack Modèles LLM & Consommation par Agent de l'Essaim</span>
+          <div class="space-y-2">
+            ${(m.agents || [])
+              .map(
+                ag => `
+              <div class="p-2.5 rounded-lg bg-[#1E1B18] border border-[#2E2924] flex items-center justify-between gap-2 text-[11px]">
+                <div>
+                  <div class="font-bold text-[#FAF5ED]">${ag.agentName} <span class="text-[#8C8073] font-normal">(${ag.roleTitle})</span></div>
+                  <div class="text-[10px] text-[#9EC5D6] font-mono mt-0.5">Modèle actif : ${ag.lastModelUsed} • Provider : ${ag.provider}</div>
+                </div>
+                <div class="text-right whitespace-nowrap">
+                  <div class="font-bold text-[#F4C44E]">${(ag.inputTokens + ag.outputTokens).toLocaleString('fr-FR')} tok</div>
+                  <div class="text-[10px] text-[#8CD99E]">${ag.callsCount} appels • 0,00 €</div>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `;
     }
 
     function renderResidentsTab() {
@@ -612,11 +1191,15 @@
         "En rentrant de sa garde d'infirmière, Amina croise M. Martin dans le hall du bâtiment HLM";
       appState.isBusy = true;
       renderTelegramCard();
-      await fetch('/api/episodes', {
+      const res = await fetch('/api/episodes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topicPrompt })
       });
+      const data = await res.json();
+      if (data.episode) {
+        appState.selectedEpisodeId = data.episode.id;
+      }
       input.value = '';
       appState.isBusy = false;
       await fetchStudioState();
@@ -633,6 +1216,18 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ episodeId: epId })
+        });
+      } else if (action === 'jump') {
+        await fetch('/api/episodes/select-gate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ episodeId: epId, gateId: param || '3_script' })
+        });
+      } else if (action === 'swarm_sync') {
+        await fetch('/api/episodes/swarm-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ episodeId: epId, includeVideo: true })
         });
       } else if (action === 'alt') {
         const ep = appState.activeEpisode;
@@ -687,16 +1282,38 @@
 
     async function submitRevision() {
       const input = document.getElementById('revisionInput');
-      const text = input.value.trim();
+      const gateSelect = document.getElementById('targetGateSelect');
+      let text = input.value.trim();
       if (!text || !appState.activeEpisode) return;
+
+      let targetGate = gateSelect ? gateSelect.value : '';
+
+      // Also support @script, @idee, @recherche, @visuels, @son, @video inline in Web UI
+      const prefixMatch = text.match(/^@(idee|idée|youssef|recherche|sources|salma|script|karim|visuels|leila|son|audio|bilal|video|nadia)\s+(.+)$/i);
+      if (prefixMatch) {
+        const tag = prefixMatch[1].toLowerCase();
+        text = prefixMatch[2].trim();
+        if (['idee', 'idée', 'youssef'].includes(tag)) targetGate = '1_idea';
+        else if (['recherche', 'sources', 'salma'].includes(tag)) targetGate = '2_research';
+        else if (['script', 'karim'].includes(tag)) targetGate = '3_script';
+        else if (['visuels', 'leila'].includes(tag)) targetGate = '4b_visuals';
+        else if (['son', 'audio', 'bilal'].includes(tag)) targetGate = '5_audio';
+        else if (['video', 'nadia'].includes(tag)) targetGate = '6_video';
+      }
+
       appState.isBusy = true;
       renderTelegramCard();
       await fetch('/api/episodes/revise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ episodeId: appState.activeEpisode.id, feedbackText: text })
+        body: JSON.stringify({
+          episodeId: appState.activeEpisode.id,
+          feedbackText: text,
+          targetGate: targetGate || undefined
+        })
       });
       input.value = '';
+      if (gateSelect) gateSelect.value = '';
       appState.isBusy = false;
       await fetchStudioState();
     }
@@ -722,11 +1339,8 @@
     }
 
     function selectEpisode(epId) {
-      const found = appState.episodes.find(e => e.id === epId);
-      if (found) {
-        appState.activeEpisode = found;
-        fetchStudioState();
-      }
+      appState.selectedEpisodeId = epId;
+      fetchStudioState();
     }
 
     function renderVoiceLabTab() {
@@ -801,21 +1415,46 @@
     }
 
     function switchRightTab(tab) {
-      ['telegram', 'voicelab', 'residents', 'harness'].forEach(t => {
+      ['telegram', 'voicelab', 'tiktok', 'monitoring', 'residents', 'harness'].forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         if (el) el.classList.toggle('hidden', t !== tab);
         if (btn) {
           btn.className =
             t === tab
-              ? 'py-3 px-1.5 border-b-2 border-[#F4C44E] text-[#F4C44E] bg-[#1E1B18] transition truncate'
-              : 'py-3 px-1.5 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate';
+              ? 'py-3 px-1 border-b-2 border-[#F4C44E] text-[#F4C44E] bg-[#1E1B18] transition truncate'
+              : 'py-3 px-1 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition truncate';
         }
       });
       if (tab === 'voicelab') renderVoiceLabTab();
+      if (tab === 'tiktok') renderTikTokTab();
+      if (tab === 'monitoring') renderMonitoringTab();
     }
 
-    // --- 2D VIRTUAL STUDIO CANVAS RENDERER ---
+    // --- CLICK ON 2D VIRTUAL STUDIO CANVAS TO SELECT ANY AGENT DIRECTLY ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('virtualStudioCanvas');
+      if (!canvas) return;
+      canvas.addEventListener('click', ev => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clickX = (ev.clientX - rect.left) * scaleX;
+        const clickY = (ev.clientY - rect.top) * scaleY;
+
+        for (const desk of STUDIO_DESKS) {
+          const dx = clickX - desk.x;
+          const dy = clickY - desk.y;
+          if (Math.abs(dx) <= 85 && Math.abs(dy) <= 75) {
+            selectGateTo(desk.gateId);
+            switchRightTab('telegram');
+            break;
+          }
+        }
+      });
+    });
+
+    // --- 2D VIRTUAL STUDIO CANVAS RENDERER (Supports Parallel Active Agents & Stale Badges) ---
     function drawVirtualStudio(ts) {
       const t = ts / 1000;
       const canvas = document.getElementById('virtualStudioCanvas');
@@ -837,24 +1476,47 @@
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
       }
 
-      // Draw Pipeline Path connecting the 6 desks
+      // Draw DAG Swarm Mesh Paths connecting desks (including parallel fork from Scriptwriter to Illustrator & Sound Engineer)
       ctx.strokeStyle = 'rgba(244, 196, 80, 0.22)';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.5;
       ctx.setLineDash([6, 6]);
       ctx.beginPath();
-      STUDIO_DESKS.forEach((d, i) => {
-        if (i === 0) ctx.moveTo(d.x, d.y);
-        else ctx.lineTo(d.x, d.y);
-      });
+      // 1 -> 2 -> 3
+      ctx.moveTo(STUDIO_DESKS[0].x, STUDIO_DESKS[0].y);
+      ctx.lineTo(STUDIO_DESKS[1].x, STUDIO_DESKS[1].y);
+      ctx.lineTo(STUDIO_DESKS[2].x, STUDIO_DESKS[2].y);
+      // Fork from 3 (Script) to 4 (Illustrator) AND 5 (Sound Engineer) in parallel
+      ctx.moveTo(STUDIO_DESKS[2].x, STUDIO_DESKS[2].y);
+      ctx.lineTo(STUDIO_DESKS[3].x, STUDIO_DESKS[3].y);
+      ctx.moveTo(STUDIO_DESKS[2].x, STUDIO_DESKS[2].y);
+      ctx.lineTo(STUDIO_DESKS[4].x, STUDIO_DESKS[4].y);
+      // Merge 4 & 5 into 6 (Video Editor)
+      ctx.moveTo(STUDIO_DESKS[3].x, STUDIO_DESKS[3].y);
+      ctx.lineTo(STUDIO_DESKS[4].x, STUDIO_DESKS[4].y);
+      ctx.lineTo(STUDIO_DESKS[5].x, STUDIO_DESKS[5].y);
       ctx.stroke();
       ctx.setLineDash([]);
 
       const ep = appState.activeEpisode;
-      const activeAgentId = ep ? ep.activeAgent : null;
+      const activeList =
+        ep && Array.isArray(ep.activeAgents) && ep.activeAgents.length
+          ? ep.activeAgents
+          : ep && ep.activeAgent
+          ? [ep.activeAgent]
+          : [];
 
       // Draw Each of the 6 Agent Workstations
       STUDIO_DESKS.forEach((desk, idx) => {
-        const isActive = activeAgentId === desk.id;
+        const isActive = activeList.includes(desk.id);
+        const isStale =
+          ep &&
+          ep.steps &&
+          ((desk.id === 'researcher' && ep.steps.research?.stale) ||
+            (desk.id === 'scriptwriter' && ep.steps.script?.stale) ||
+            (desk.id === 'illustrator' && (ep.steps.prompts?.stale || ep.steps.visuals?.stale)) ||
+            (desk.id === 'sound_engineer' && ep.steps.audio?.stale) ||
+            (desk.id === 'video_editor' && ep.steps.video?.stale));
+
         const bob = isActive ? Math.sin(t * 4) * 3 : Math.sin(t * 1.8 + idx) * 1.2;
 
         ctx.save();
@@ -863,10 +1525,16 @@
         // Active Golden Halo under workstation
         if (isActive) {
           const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 95);
-          glow.addColorStop(0, 'rgba(244, 196, 80, 0.32)');
+          glow.addColorStop(0, 'rgba(244, 196, 80, 0.34)');
           glow.addColorStop(1, 'rgba(244, 196, 80, 0)');
           ctx.fillStyle = glow;
           ctx.beginPath(); ctx.arc(0, 0, 95, 0, Math.PI * 2); ctx.fill();
+        } else if (isStale) {
+          const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 80);
+          glow.addColorStop(0, 'rgba(231, 111, 81, 0.25)');
+          glow.addColorStop(1, 'rgba(231, 111, 81, 0)');
+          ctx.fillStyle = glow;
+          ctx.beginPath(); ctx.arc(0, 0, 80, 0, Math.PI * 2); ctx.fill();
         }
 
         // Desk Shadow & Wooden Table
@@ -874,8 +1542,8 @@
         ctx.beginPath(); ctx.roundRect(-68, 12, 136, 44, 10); ctx.fill();
 
         ctx.fillStyle = isActive ? '#3A3026' : '#26211C';
-        ctx.strokeStyle = isActive ? '#F4C44E' : '#3E362E';
-        ctx.lineWidth = isActive ? 2.5 : 1.5;
+        ctx.strokeStyle = isActive ? '#F4C44E' : isStale ? '#E76F51' : '#3E362E';
+        ctx.lineWidth = isActive || isStale ? 2.5 : 1.5;
         ctx.beginPath(); ctx.roundRect(-65, 8, 130, 42, 10); ctx.fill(); ctx.stroke();
 
         // Faceless Agent Avatar behind desk
@@ -906,13 +1574,13 @@
         ctx.fillStyle = isActive ? '#F4C44E' : '#FAF5ED';
         ctx.font = 'bold 11.5px system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(desk.role, 0, 66);
+        ctx.fillText(`${desk.name} • ${desk.role}`, 0, 66);
 
-        // Status Bubble above active agent
+        // Status Bubble above active or stale agent
         if (isActive) {
           const statusText = appState.isBusy
-            ? '⚙️ Réflexion + Autocritique...'
-            : '✋ Autocritique prête • Attente validation';
+            ? '⚡ Exécution Essaim en cours...'
+            : '🎯 Agent ciblé • Cliquer pour éditer';
           ctx.fillStyle = '#141210';
           ctx.strokeStyle = '#F4C44E';
           ctx.lineWidth = 1.5;
@@ -920,6 +1588,14 @@
           ctx.fillStyle = '#F4C44E';
           ctx.font = 'bold 10px system-ui, sans-serif';
           ctx.fillText(statusText, 0, -67);
+        } else if (isStale) {
+          ctx.fillStyle = '#3D261A';
+          ctx.strokeStyle = '#E76F51';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.roundRect(-72, -80, 144, 20, 10); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#F4A261';
+          ctx.font = 'bold 9.5px system-ui, sans-serif';
+          ctx.fillText('⚠️ À synchroniser', 0, -67);
         }
 
         ctx.restore();

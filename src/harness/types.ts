@@ -159,6 +159,7 @@ export interface StepSubmission<T> {
   selfCritique: SelfCritique;
   userFeedbackHistory: string[];
   approved: boolean;
+  stale?: boolean;
 }
 
 export interface Episode {
@@ -168,6 +169,7 @@ export interface Episode {
   updatedAt: string;
   currentGate: ValidationGateId;
   activeAgent: AgentId | null;
+  activeAgents?: AgentId[];
   status: 'agent_working' | 'awaiting_user_validation' | 'completed' | 'error';
   steps: {
     idea?: StepSubmission<IdeaDeliverable>;

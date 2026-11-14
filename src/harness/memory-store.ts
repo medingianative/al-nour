@@ -296,6 +296,121 @@ export const MemoryStore = {
       `INSERT OR REPLACE INTO voice_cache (cache_key, speaker_id, engine, spoken_text, file_path, duration_sec, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).run(cacheKey, speakerId, engine, spokenText, filePath, durationSec, new Date().toISOString());
+  },
+
+  getMonitoringStats() {
+    const episodes = this.listEpisodes();
+    const agentModels = this.getAgentModels();
+    const cacheRows = db
+      .prepare('SELECT speaker_id, engine, duration_sec, created_at FROM voice_cache ORDER BY created_at DESC')
+      .all() as Array<{ speaker_id: string; engine: string; duration_sec: number; created_at: string }>;
+
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalActualCostUsd = 0;
+    let totalStepsExecuted = 0;
+
+    const perAgentStats: Record<
+      string,
+      {
+        agentId: string;
+        agentName: string;
+        roleTitle: string;
+        configuredModel: string;
+        provider: string;
+        callsCount: number;
+        inputTokens: number;
+        outputTokens: number;
+        actualCostUsd: number;
+        lastModelUsed: string;
+      }
+    > = {};
+
+    for (const m of agentModels) {
+      perAgentStats[m.agentId] = {
+        agentId: m.agentId,
+        agentName: m.agentName,
+        roleTitle: m.roleTitle,
+        configuredModel: m.modelId,
+        provider: m.provider,
+        callsCount: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        actualCostUsd: 0,
+        lastModelUsed: m.modelId
+      };
+    }
+
+    for (const ep of episodes) {
+      const steps = Object.values(ep.steps).filter(Boolean);
+      for (const st of steps) {
+        if (!st) continue;
+        totalStepsExecuted += 1;
+        const inp = st.tokensUsed?.input || 0;
+        const out = st.tokensUsed?.output || 0;
+        const cost = st.tokensUsed?.costUsd || 0;
+        totalInputTokens += inp;
+        totalOutputTokens += out;
+        totalActualCostUsd += cost;
+
+        const ag = perAgentStats[st.agentId];
+        if (ag) {
+          ag.callsCount += 1;
+          ag.inputTokens += inp;
+          ag.outputTokens += out;
+          ag.actualCostUsd += cost;
+          if (st.modelUsed) ag.lastModelUsed = st.modelUsed;
+        }
+      }
+    }
+
+    // Calculate equivalent commercial API cost saved (e.g. GPT-4o + ElevenLabs + Midjourney equivalent)
+    const estimatedCommercialLlmUsd = ((totalInputTokens * 2.5 + totalOutputTokens * 10.0) / 1_000_000);
+    const totalVoiceSec = cacheRows.reduce((acc, r) => acc + (r.duration_sec || 0), 0);
+    const estimatedCommercialTtsUsd = (totalVoiceSec / 60) * 0.18; // ElevenLabs ~$0.18/min
+    const estimatedCommercialSavedEur = Number(((estimatedCommercialLlmUsd + estimatedCommercialTtsUsd) * 0.92).toFixed(2));
+
+    const voiceEnginesBreakdown: Record<string, number> = {};
+    for (const r of cacheRows) {
+      voiceEnginesBreakdown[r.engine] = (voiceEnginesBreakdown[r.engine] || 0) + 1;
+    }
+
+    return {
+      totalEpisodes: episodes.length,
+      completedEpisodes: episodes.filter(e => e.currentGate === 'completed' || Boolean(e.steps.video)).length,
+      totalStepsExecuted,
+      totalInputTokens,
+      totalOutputTokens,
+      totalTokens: totalInputTokens + totalOutputTokens,
+      actualCostEur: Number((totalActualCostUsd * 0.92).toFixed(4)),
+      estimatedCommercialSavedEur,
+      voiceCache: {
+        totalCachedSegments: cacheRows.length,
+        totalDurationSec: Math.round(totalVoiceSec),
+        enginesBreakdown: voiceEnginesBreakdown
+      },
+      ttsStack: [
+        {
+          tier: 'Primaire Adultes (Arabe Vocalisé Natif)',
+          engine: 'Google Gemini 3.8 Flash TTS / Lite / 3.1 Preview',
+          voices: 'Charon (Ibrahim), Puck (Tariq), Aoede (Amina), Kore (Khadija), Fenrir (Martin/Narrateur)',
+          cost: '0,00 € (Free Tier 30 req/j cumulées + Cache SQLite)'
+        },
+        {
+          tier: 'Primaire Enfants & Backup Cloud',
+          engine: 'Qwen3-TTS 1.7B Voice Design (Alibaba Cloud / HF)',
+          voices: 'Adam (10 ans, voix enfantine aiguë) & Lina (6 ans, petite fille)',
+          cost: '0,00 € (Open-Weight Gradio API + Cache SQLite)'
+        },
+        {
+          tier: 'Secours Hors-Ligne Local',
+          engine: 'Piper-TTS Neural ONNX (CPU VPS)',
+          voices: 'fr_FR-tom-medium / fr_FR-siwis-medium / fr_FR-upmc-medium',
+          cost: '0,00 € (100% Local Hors-Ligne)'
+        }
+      ],
+      agents: Object.values(perAgentStats)
+    };
   }
 };
 
