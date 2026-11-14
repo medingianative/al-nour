@@ -67,61 +67,61 @@ export const DEFAULT_AGENT_MODELS: AgentModelConfig[] = [
     agentId: 'director',
     agentName: 'Youssef (Directeur Studio)',
     roleTitle: 'Orchestrateur & Cadrage Narratif',
-    provider: 'openrouter_free',
-    modelId: 'deepseek/deepseek-r1:free',
-    temperature: 0.5,
-    maxContextTokens: 1800,
-    rationale: 'Modèle de raisonnement profond pour choisir le meilleur angle émotionnel, éviter les clichés et sélectionner les habitants du HLM.'
+    provider: 'gemini_free',
+    modelId: 'gemini-3.5-flash',
+    temperature: 0.45,
+    maxContextTokens: 2400,
+    rationale: 'Gemini 3.5 Flash : compréhension fine de tes consignes, cadrage émotionnel sur mesure et sélection pertinente des habitants du HLM.'
   },
   {
     agentId: 'researcher',
     agentName: 'Salma (Chercheuse & Éthique)',
     roleTitle: 'Vérification des Sources & Charte Éthique',
-    provider: 'openrouter_free',
-    modelId: 'deepseek/deepseek-r1:free',
+    provider: 'gemini_free',
+    modelId: 'gemini-3.5-flash',
     temperature: 0.2,
-    maxContextTokens: 2000,
-    rationale: 'Température basse (0.2) et fort raisonnement pour garantir l’exactitude des versets/hadiths et le respect strict de la charte sans visage.'
+    maxContextTokens: 2400,
+    rationale: 'Température basse (0.2) sur Gemini 3.5 Flash pour garantir l’exactitude des versets/hadiths, la vocalisation arabe et le respect strict de la charte.'
   },
   {
     agentId: 'scriptwriter',
     agentName: 'Karim (Scénariste TikTok)',
     roleTitle: 'Storytelling 40–60s & Hooks',
-    provider: 'openrouter_free',
-    modelId: 'meta-llama/llama-3.3-70b-instruct:free',
-    temperature: 0.65,
-    maxContextTokens: 2200,
-    rationale: 'Plume fluide, naturelle et chaleureuse en français pour des hooks de 3 secondes captivants et des dialogues sincères.'
+    provider: 'gemini_free',
+    modelId: 'gemini-3.5-flash',
+    temperature: 0.55,
+    maxContextTokens: 2800,
+    rationale: 'Gemini 3.5 Flash : réécriture chirurgicale du script selon tes consignes, dialogues naturels et hooks TikTok captivants.'
   },
   {
     agentId: 'illustrator',
-    agentName: 'Leïla (Directrice Artistique 2D)',
-    roleTitle: 'Composition des Plans 9:16 & Prompts Flux',
-    provider: 'groq_free',
-    modelId: 'llama-3.1-8b-instant',
+    agentName: 'Leïla (Directrice Artistique 2D/3D)',
+    roleTitle: 'Mise en Scène Cinéma 3D & Sélection Autonome des Cartes',
+    provider: 'gemini_free',
+    modelId: 'gemini-3.5-flash',
     temperature: 0.3,
-    maxContextTokens: 1500,
-    rationale: 'Modèle ultra-rapide et économe en tokens pour traduire le script validé en paramètres de scène 2D/SVG et prompts Flux.'
+    maxContextTokens: 2600,
+    rationale: 'Gemini 3.5 Flash : décide de manière autonome sur quels plans placer une carte éducative (conclusion / moment clé) et règle la parallaxe 3D.'
   },
   {
     agentId: 'sound_engineer',
     agentName: 'Bilal (Ingénieur Son & Phonétique)',
-    roleTitle: 'Voix-Off FR, Phonétique Islamique & Ambiance',
-    provider: 'groq_free',
-    modelId: 'llama-3.1-8b-instant',
+    roleTitle: 'Voix Gemini 3.8 + Qwen3, Phonétique & Ambiance',
+    provider: 'gemini_free',
+    modelId: 'gemini-3.1-flash-lite',
     temperature: 0.2,
-    maxContextTokens: 1200,
-    rationale: 'Tâche déterministe et légère : application du dictionnaire phonétique, synthèse Edge-TTS et sélection de l’ambiance sonore.'
+    maxContextTokens: 1500,
+    rationale: 'Adaptation immédiate de l’ambiance sonore et de la distribution vocale selon tes consignes avec Cache Vocal SQLite.'
   },
   {
     agentId: 'video_editor',
-    agentName: 'Nadia (Monteuse 9:16)',
-    roleTitle: 'Animation Ken Burns, Sous-titres Dorés & Rendu MP4',
-    provider: 'groq_free',
-    modelId: 'llama-3.1-8b-instant',
-    temperature: 0.1,
-    maxContextTokens: 1200,
-    rationale: 'Orchestration technique FFmpeg, synchronisation des sous-titres dorés mot-à-mot et contrôle qualité du MP4 final.'
+    agentName: 'Nadia (Monteuse Cinéma 9:16)',
+    roleTitle: 'Parallaxe 3D Multi-Couches, Transitions xfade & Rendu MP4',
+    provider: 'gemini_free',
+    modelId: 'gemini-3.1-flash-lite',
+    temperature: 0.15,
+    maxContextTokens: 1500,
+    rationale: 'Compositing FFmpeg multi-couches (Parallaxe 3D fond/personnages, rayons lumineux animés, transitions fluides et apparition animée des cartes).'
   }
 ];
 
@@ -140,7 +140,7 @@ const INITIAL_LEARNED_RULES: Array<{ agentId: AgentId; rule: string }> = [
   },
   {
     agentId: 'illustrator',
-    rule: 'Tariq et Ibrahim sont toujours sans barbe en tenue civile sobre ; Amina et Khadija portent un voile sobre sans uniforme de métier.'
+    rule: 'Ne jamais surcharger tous les plans avec des cartes éducatives : laisser respirer les scènes et réserver les cartes aux moments clés ou en conclusion.'
   }
 ];
 
@@ -153,11 +153,27 @@ function seedDatabase() {
     }
   }
 
-  const existingModels = db.prepare('SELECT COUNT(*) as count FROM agent_models').get() as { count: number };
-  if (existingModels.count === 0) {
-    const insertMod = db.prepare('INSERT INTO agent_models (agent_id, config_json) VALUES (?, ?)');
+  // Always upgrade legacy unconfigured openrouter/groq defaults to Gemini 3.5 Flash
+  const insertMod = db.prepare('INSERT OR REPLACE INTO agent_models (agent_id, config_json) VALUES (?, ?)');
+  const currentRows = db.prepare('SELECT agent_id, config_json FROM agent_models').all() as Array<{
+    agent_id: string;
+    config_json: string;
+  }>;
+  if (currentRows.length === 0) {
     for (const m of DEFAULT_AGENT_MODELS) {
       insertMod.run(m.agentId, JSON.stringify(m));
+    }
+  } else {
+    for (const m of DEFAULT_AGENT_MODELS) {
+      const existing = currentRows.find(r => r.agent_id === m.agentId);
+      if (!existing) {
+        insertMod.run(m.agentId, JSON.stringify(m));
+      } else {
+        const parsed = JSON.parse(existing.config_json) as AgentModelConfig;
+        if (parsed.provider === 'openrouter_free' || parsed.provider === 'groq_free') {
+          insertMod.run(m.agentId, JSON.stringify(m));
+        }
+      }
     }
   }
 

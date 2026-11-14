@@ -51,15 +51,43 @@ function wrapTextLines(text: string, maxCharsPerLine: number, maxLines: number =
 }
 
 /**
- * Automatically derives a rich Educational Overlay for any scene if not explicitly set
+ * Autonomous & intelligent educational overlay resolver:
+ * Instead of cluttering all 8 scenes, places overlays only where pedagogically and dynamically relevant:
+ * - Most narrative/dialogue scenes (1, 2, 3, 4, 6, 7): NO big card, letting the 3D cinema animation breathe!
+ *   (Optional ultra-discreet top pill on scene 2 only if a clear Arabic greeting/du'a is spoken)
+ * - Key Hadith/Quran scene (scene 5): Compact source banner (`banner_compact`)
+ * - Final conclusion scene (scene 8 / last scene): Complete takeaway card (`summary_card`)
  */
 export function resolveSceneEducationalOverlay(
   scene: SceneVisualSpec,
   research?: ResearchDeliverable,
-  episodeTitle?: string
-): EducationalOverlay {
-  if (scene.educationalOverlay) {
-    return scene.educationalOverlay;
+  episodeTitle?: string,
+  totalScenes: number = 8,
+  modeOverride?: 'conclusion_only' | 'none' | 'balanced_auto'
+): EducationalOverlay | undefined {
+  if (scene.disableEducationalCard || scene.educationalOverlay === null || modeOverride === 'none') {
+    return undefined;
+  }
+
+  const isConclusionScene = scene.sceneNumber === totalScenes || scene.sceneNumber === 8;
+
+  if (modeOverride === 'conclusion_only' && !isConclusionScene) {
+    return undefined;
+  }
+
+  // If the AI agent (Leïla via Gemini 3.5 Flash) explicitly crafted a valid overlay for this scene, honor it
+  if (scene.educationalOverlay && scene.educationalOverlay.mainText) {
+    const fmt =
+      scene.educationalOverlay.format ||
+      (isConclusionScene
+        ? 'summary_card'
+        : scene.educationalOverlay.type === 'hadith_quran_card'
+        ? 'banner_compact'
+        : 'pill_minimal');
+    return {
+      ...scene.educationalOverlay,
+      format: fmt
+    };
   }
 
   const citation =
@@ -70,62 +98,203 @@ export function resolveSceneEducationalOverlay(
     research?.frenchMeaning ||
     'Excellence du comportement, douceur sincère et respect attentif envers ses voisins.';
 
-  if (scene.sceneNumber === 1) {
+  // 1. Conclusion Scene (Plan 8): Full synthesis card with actionable takeaway
+  if (isConclusionScene) {
     return {
-      type: 'context_badge',
-      badgeTitle: '✦ ÉPISODE ÉDUCATIF AL NOUR • RÉSIDENCE LES CÈDRES ✦',
-      arabicScript: 'النُّورُ فِي الْأَخْلَاقِ',
-      phonetic: 'Al-Nour fi Al-Akhlaq (La lumière par le comportement)',
-      mainText: episodeTitle || 'Vivre sa foi avec douceur, sincérité et respect au quotidien',
-      sourceOrSubtext: `Thème : ${arabicTerm}`
+      type: 'action_tip',
+      format: 'summary_card',
+      badgeTitle: '✦ À RETENIR • LE GESTE AL NOUR ✦',
+      arabicScript: 'تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ صَدَقَةٌ',
+      phonetic: 'Tabassoumouka fî wajhi akhîka sadaqah',
+      mainText: `« Ton sourire face à ton prochain est une aumône. » ${frenchMeaning}`,
+      sourceOrSubtext: `Source : ${citation}`
     };
   }
 
-  if (scene.sceneNumber === 2 || scene.sceneNumber === 3) {
-    const hasSalam = scene.subtitleText.toLowerCase().includes('salam') || scene.subtitleText.toLowerCase().includes('bonsoir');
-    return {
-      type: 'arabic_term_dua',
-      badgeTitle: hasSalam
-        ? '✦ SALUTATION & BIENVEILLANCE PROPHÉTIQUE ✦'
-        : '✦ NOTION CLÉ & INVOCATION (DU’A) ✦',
-      arabicScript: hasSalam ? 'السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ' : 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
-      phonetic: hasSalam ? "Assalâmou 'Alaykoum wa Rahmatoullâh" : 'Bismillâhi Ar-Rahmâni Ar-Rahîm',
-      mainText: hasSalam
-        ? 'Saluer son voisin avec le sourire et lui faciliter sa journée est une œuvre de foi.'
-        : frenchMeaning,
-      sourceOrSubtext: `Terme étudié : ${arabicTerm}`
-    };
-  }
-
-  if (scene.sceneNumber === 4) {
-    return {
-      type: 'arabic_term_dua',
-      badgeTitle: '✦ QUESTION D’ENFANT • TRANSMISSION FAMILIALE ✦',
-      arabicScript: 'الرِّفْقُ مَا كَانَ فِي شَيْءٍ إِلَّا زَانَهُ',
-      phonetic: 'Ar-Rifq (La douceur embellit toute chose)',
-      mainText: frenchMeaning,
-      sourceOrSubtext: 'Pédagogie par l’exemple au sein de la famille Al Nour'
-    };
-  }
-
-  if (scene.sceneNumber === 5 || scene.sceneNumber === 6) {
+  // 2. Central Spiritual Quote Scene (Plan 5): Compact authentic source banner
+  if (scene.sceneNumber === 5) {
     return {
       type: 'hadith_quran_card',
-      badgeTitle: `✦ SOURCE AUTHENTIQUE • ${(research?.primarySourceType || 'HADITH & CORAN').toUpperCase()} ✦`,
+      format: 'banner_compact',
+      badgeTitle: `✦ ${(research?.primarySourceType || 'SOURCE AUTHENTIQUE').toUpperCase()} ✦`,
       arabicScript: 'مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الْآخِرِ فَلْيُحْسِنْ إِلَى جَارِهِ',
       phonetic: "Man kâna yu'minu billâhi... falyuhsin ilâ jârihi",
       mainText: frenchMeaning,
-      sourceOrSubtext: `Réf : ${citation}`
+      sourceOrSubtext: citation
     };
   }
 
+  // 3. Optional Micro-Pill on Scene 2 ONLY if a direct greeting / invocation is spoken
+  const lowerSub = (scene.subtitleText || '').toLowerCase();
+  if (
+    scene.sceneNumber === 2 &&
+    (lowerSub.includes('salam') || lowerSub.includes('bismillah') || lowerSub.includes('bonsoir'))
+  ) {
+    return {
+      type: 'arabic_term_dua',
+      format: 'pill_minimal',
+      badgeTitle: '✦ ADAB DU QUOTIDIEN ✦',
+      arabicScript: 'السَّلَامُ عَلَيْكُمْ',
+      phonetic: 'Al-Ihsan (La bienveillance en acte)',
+      mainText: `Notion clé : ${arabicTerm}`
+    };
+  }
+
+  // All other scenes (1, 3, 4, 6, 7): 100% clean cinema frame so the 3D parallax & lighting shine!
+  return undefined;
+}
+
+/**
+ * Applies natural-language user instructions directly to the visual scenes
+ * (card placement, conclusion-only mode, camera motion, lighting, characters)
+ */
+export function applyVisualInstructionToScenes(
+  scenes: SceneVisualSpec[],
+  feedback: string | undefined,
+  research?: ResearchDeliverable,
+  episodeTitle?: string
+): { scenes: SceneVisualSpec[]; summary: string } {
+  const total = scenes.length || 8;
+  if (!feedback || !feedback.trim()) {
+    const resolved = scenes.map(sc => ({
+      ...sc,
+      educationalOverlay: resolveSceneEducationalOverlay(sc, research, episodeTitle, total, 'balanced_auto')
+    }));
+    const count = resolved.filter(s => Boolean(s.educationalOverlay)).length;
+    return {
+      scenes: resolved,
+      summary: `Sélection autonome équilibrée : ${count} incrustation(s) sur ${total} plans (format adapté au rythme + conclusion).`
+    };
+  }
+
+  const fb = feedback.toLowerCase();
+  const changes: string[] = [];
+
+  const wantsNoCards =
+    fb.includes('aucune carte') ||
+    fb.includes('sans carte') ||
+    fb.includes('supprime les cartes') ||
+    fb.includes('enlever les cartes') ||
+    fb.includes('enlève les cartes') ||
+    fb.includes('retire les cartes');
+
+  const wantsConclusionOnly =
+    fb.includes('conclusion') ||
+    fb.includes('uniquement à la fin') ||
+    fb.includes('seulement à la fin') ||
+    fb.includes('dernier plan') ||
+    fb.includes('fin uniquement') ||
+    fb.includes('trop d\'étiquettes') ||
+    fb.includes('trop de cartes') ||
+    fb.includes('équilibré');
+
+  const wantsMoreAnimation =
+    fb.includes('animation') ||
+    fb.includes('parallaxe') ||
+    fb.includes('cinéma') ||
+    fb.includes('cinema') ||
+    fb.includes('lumière') ||
+    fb.includes('transition') ||
+    fb.includes('dynamique') ||
+    fb.includes('vivant') ||
+    fb.includes('3d');
+
+  const modeOverride: 'conclusion_only' | 'none' | 'balanced_auto' = wantsNoCards
+    ? 'none'
+    : wantsConclusionOnly
+    ? 'conclusion_only'
+    : 'balanced_auto';
+
+  const cinematicMotions: Array<SceneVisualSpec['cameraMotion']> = [
+    'parallax_glide',
+    'zoom_in',
+    'pan_right',
+    'dramatic_push',
+    'parallax_glide',
+    'zoom_in',
+    'pan_right',
+    'dramatic_push'
+  ];
+  const transitions: Array<NonNullable<SceneVisualSpec['transitionType']>> = [
+    'fade',
+    'slideleft',
+    'smoothup',
+    'fade',
+    'circleopen',
+    'fade',
+    'slideleft',
+    'fade'
+  ];
+  const lightingMoods: Array<NonNullable<SceneVisualSpec['lightingMood']>> = [
+    'golden_hour',
+    'sunbeams',
+    'golden_hour',
+    'sunbeams',
+    'warm_lantern',
+    'sunbeams',
+    'night_glow',
+    'golden_hour'
+  ];
+
+  const updated = scenes.map((sc, idx) => {
+    const copy: SceneVisualSpec = { ...sc };
+
+    if (wantsNoCards) {
+      copy.disableEducationalCard = true;
+      copy.educationalOverlay = undefined;
+    } else if (wantsConclusionOnly) {
+      const isLast = copy.sceneNumber === total || copy.sceneNumber === 8;
+      copy.disableEducationalCard = !isLast;
+      copy.educationalOverlay = isLast
+        ? resolveSceneEducationalOverlay(
+            { ...copy, disableEducationalCard: false, educationalOverlay: undefined },
+            research,
+            episodeTitle,
+            total,
+            'conclusion_only'
+          )
+        : undefined;
+    } else {
+      copy.educationalOverlay = resolveSceneEducationalOverlay(
+        copy,
+        research,
+        episodeTitle,
+        total,
+        'balanced_auto'
+      );
+    }
+
+    if (wantsMoreAnimation) {
+      copy.cameraMotion = cinematicMotions[idx % cinematicMotions.length];
+      copy.transitionType = transitions[idx % transitions.length];
+      copy.lightingMood = lightingMoods[idx % lightingMoods.length];
+    }
+
+    return copy;
+  });
+
+  if (wantsNoCards) {
+    changes.push('Toutes les cartes éducatives ont été retirées sur les 8 plans');
+  } else if (wantsConclusionOnly) {
+    changes.push(
+      'Cartes éducatives retirées des plans 1 à 7 et concentrées en une carte de synthèse animée en conclusion (Plan 8)'
+    );
+  } else {
+    const activePlans = updated
+      .filter(s => Boolean(s.educationalOverlay))
+      .map(s => `Plan ${s.sceneNumber} (${s.educationalOverlay?.format || 'carte'})`);
+    changes.push(`Cartes éducatives dosées avec parcimonie (${activePlans.join(', ')})`);
+  }
+
+  if (wantsMoreAnimation) {
+    changes.push(
+      'Mise en scène Cinéma 3D activée (Parallaxe multi-couches décor/personnages, rayons dorés animés, transitions fluides xfade et apparition glissée des cartes)'
+    );
+  }
+
   return {
-    type: 'action_tip',
-    badgeTitle: '✦ LE GESTE AL NOUR À RETENIR AU QUOTIDIEN ✦',
-    arabicScript: 'تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ صَدَقَةٌ',
-    phonetic: 'Tabassoumouka fî wajhi akhîka sadaqah',
-    mainText: '« Ton sourire face à ton prochain est une aumône (Sadaqa). » Un geste simple apaise tout un immeuble.',
-    sourceOrSubtext: `Réf : ${citation}`
+    scenes: updated,
+    summary: changes.join(' • ')
   };
 }
 
@@ -148,7 +317,7 @@ function buildCharacterSvgGroup(
   // 3D Rim Light & Speaking Aura when character is talking
   const speakingHaloSvg = isActiveSpeaker
     ? `
-      <ellipse cx="0" cy="${torsoTopY + 10}" rx="62" ry="88" fill="url(#speakerAuraGrad)" />
+      <ellipse cx="0" cy="${torsoTopY + 10}" rx="64" ry="90" fill="url(#speakerAuraGrad)" />
       <circle cx="0" cy="${torsoTopY - 34}" r="38" fill="none" stroke="rgba(244,196,78,0.55)" stroke-width="2" stroke-dasharray="5,4" />
       <circle cx="0" cy="${torsoTopY - 34}" r="47" fill="none" stroke="rgba(244,196,78,0.28)" stroke-width="1.5" />
     `
@@ -280,11 +449,9 @@ function buildCharacterSvgGroup(
       <circle cx="${lHandX}" cy="${lHandY}" r="7.5" fill="${v.skin}" />
       <circle cx="${rHandX}" cy="${rHandY}" r="7.5" fill="${v.skin}" />
       <rect x="-9" y="${torsoTopY - 10}" width="18" height="20" rx="7" fill="${v.skin}" />
-      <!-- Subtle neck shadow for 3D depth -->
       <ellipse cx="0" cy="${torsoTopY - 4}" rx="9" ry="4" fill="rgba(0,0,0,0.16)" />
       <g transform="translate(0, ${torsoTopY - 34}) rotate(${headTiltDeg})">
         ${headwearSvg}
-        <!-- Faceless 3D Shaded Head -->
         <ellipse cx="0" cy="0" rx="22" ry="28" fill="${v.skin}" />
         <path d="M 6 -26 A 20 27 0 0 1 6 26 A 14 26 0 0 0 6 -26 Z" fill="rgba(0,0,0,0.10)" />
         <path d="M -10 -24 A 18 25 0 0 0 -10 22 A 14 24 0 0 1 -10 -24 Z" fill="rgba(255,255,255,0.12)" />
@@ -303,12 +470,10 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
         const wx = 270 + col * 195;
         const isLit = (row + col) % 2 === 0 || (row === 2 && col === 1);
         windowsSvg += `
-          <!-- 3D Window Recess -->
           <rect x="${wx - 6}" y="${wy - 6}" width="144" height="130" rx="4" fill="#5A524A" />
           <rect x="${wx}" y="${wy}" width="132" height="118" fill="${isLit ? '#FFE299' : '#3B4B5E'}" stroke="#8C8277" stroke-width="5" />
           ${isLit ? `<rect x="${wx}" y="${wy}" width="132" height="118" fill="url(#windowGlow)" />` : ''}
           <line x1="${wx + 66}" y1="${wy}" x2="${wx + 66}" y2="${wy + 118}" stroke="#8C8277" stroke-width="4" />
-          <!-- 3D Balcony with drop shadow -->
           <rect x="${wx - 14}" y="${wy + 100}" width="160" height="28" rx="3" fill="#7C746B" />
           <rect x="${wx - 14}" y="${wy + 124}" width="160" height="8" fill="rgba(0,0,0,0.28)" />
         `;
@@ -324,10 +489,10 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
         </linearGradient>
       </defs>
       <rect width="1080" height="1920" fill="url(#skyGrad)" />
-      <!-- Distant 3D City Silhouettes (Parallax Layer 1) -->
+      <!-- Distant 3D City Silhouettes -->
       <rect x="40" y="520" width="180" height="820" fill="rgba(32,36,54,0.55)" />
       <rect x="870" y="560" width="175" height="780" fill="rgba(32,36,54,0.55)" />
-      <!-- Main HLM Building with 3D side wing depth (Parallax Layer 2) -->
+      <!-- Main HLM Building with 3D side wing depth -->
       <polygon points="140,380 185,350 185,1340 140,1340" fill="#B8AEA0" />
       <rect x="185" y="350" width="710" height="990" fill="#E6DDD0" filter="url(#dropShadow3D)" />
       <rect x="185" y="350" width="52" height="990" fill="#C86D51" />
@@ -336,14 +501,13 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
       ${windowsSvg}
       <rect x="410" y="1185" width="260" height="155" rx="6" fill="#2B3A4A" />
       <rect x="430" y="1202" width="220" height="138" fill="#FFE299" opacity="0.82" />
-      <!-- 3D Trees & Street Lamps -->
+      <!-- 3D Trees & Volumetric Streetlight Glow -->
       <ellipse cx="155" cy="1275" rx="130" ry="115" fill="#3B5434" filter="url(#dropShadow3D)" />
       <ellipse cx="135" cy="1255" rx="95" ry="85" fill="#4E6E45" />
       <ellipse cx="945" cy="1265" rx="140" ry="120" fill="#3B5434" filter="url(#dropShadow3D)" />
       <ellipse cx="920" cy="1245" rx="100" ry="90" fill="#4E6E45" />
-      <!-- 3D Perspective Courtyard Floor -->
       <rect x="0" y="1335" width="1080" height="585" fill="url(#floorGradExt)" />
-      <polygon points="410,1335 670,1335 880,1920 200,1920" fill="rgba(255,226,153,0.16)" />
+      <polygon points="410,1335 670,1335 880,1920 200,1920" fill="rgba(255,226,153,0.18)" />
     `;
   }
 
@@ -369,15 +533,12 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
         </linearGradient>
       </defs>
       <rect width="1080" height="1920" fill="url(#hallGrad)" />
-      <!-- 3D Glass Entrance Door with Volumetric Sunlight -->
       <rect x="630" y="390" width="370" height="960" rx="6" fill="#89B8CC" stroke="#3F4A54" stroke-width="16" filter="url(#dropShadow3D)" />
       <circle cx="810" cy="860" r="140" fill="#58784E" opacity="0.85" />
       <polygon points="630,410 990,410 1080,1750 380,1750" fill="url(#sunbeam3D)" />
-      <!-- 3D Mailbox Bank with Side Depth -->
       <polygon points="56,495 76,475 76,1025 56,1045" fill="#634F35" />
       <rect x="76" y="490" width="445" height="535" rx="8" fill="#A3865E" stroke="#7A6344" stroke-width="8" filter="url(#dropShadow3D)" />
       ${boxesSvg}
-      <!-- 3D Tiled Floor with Perspective Lines -->
       <rect x="0" y="1350" width="1080" height="570" fill="#9E9488" />
       <rect x="0" y="1340" width="1080" height="16" fill="#6E655C" />
     `;
@@ -393,11 +554,9 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
         </linearGradient>
       </defs>
       <rect width="1080" height="1920" fill="url(#kitGrad)" />
-      <!-- 3D Kitchen Window with Volumetric Morning Light -->
       <rect x="665" y="420" width="320" height="440" rx="8" fill="#FFFDF7" stroke="#5C5349" stroke-width="14" filter="url(#dropShadow3D)" />
       <line x1="825" y1="420" x2="825" y2="860" stroke="#5C5349" stroke-width="10" />
       <line x1="665" y1="640" x2="985" y2="640" stroke="#5C5349" stroke-width="10" />
-      <!-- Wooden Shelf & Plant with 3D Shadow -->
       <rect x="84" y="610" width="435" height="24" rx="4" fill="#B8895E" filter="url(#dropShadow3D)" />
       <circle cx="405" cy="550" r="44" fill="#4E6741" />
       <rect x="378" y="565" width="54" height="45" rx="6" fill="#C86D51" />
@@ -417,14 +576,12 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
         </linearGradient>
       </defs>
       <rect width="1080" height="1920" fill="url(#bedGrad)" />
-      <!-- Night Window overlooking HLM buildings & Crescent Moon -->
       <rect x="615" y="430" width="354" height="450" rx="8" fill="#101829" stroke="#EAE2D7" stroke-width="14" filter="url(#dropShadow3D)" />
       <rect x="660" y="585" width="165" height="295" fill="#223047" />
       <rect x="690" y="625" width="34" height="34" fill="#FFE299" />
       <rect x="756" y="690" width="34" height="34" fill="#FFE299" />
       <circle cx="845" cy="520" r="42" fill="#FCE38A" />
       <circle cx="862" cy="508" r="36" fill="#101829" />
-      <!-- Warm 3D Bedside Lamp Glow -->
       <circle cx="240" cy="1020" r="360" fill="url(#speakerAuraGrad)" />
       <rect x="0" y="1390" width="1080" height="530" fill="#70503B" />
     `;
@@ -440,7 +597,6 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
         </linearGradient>
       </defs>
       <rect width="1080" height="1920" fill="url(#livGrad)" />
-      <!-- 3D Family Library Bookcase -->
       <polygon points="64,450 88,430 88,1160 64,1180" fill="#593E28" />
       <rect x="88" y="430" width="375" height="730" rx="6" fill="#7A583B" filter="url(#dropShadow3D)" />
       <rect x="112" y="460" width="327" height="195" rx="4" fill="#F2EAE0" />
@@ -449,10 +605,10 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
       <rect x="184" y="498" width="42" height="156" rx="3" fill="#2B3E54" />
       <rect x="238" y="498" width="42" height="156" rx="3" fill="#4E6741" />
       <rect x="292" y="498" width="42" height="156" rx="3" fill="#C86D51" />
-      <!-- Warm framed Arabic calligraphy geometric art on right wall -->
       <rect x="640" y="510" width="290" height="360" rx="12" fill="#26211C" stroke="#F4C44E" stroke-width="6" filter="url(#dropShadow3D)" />
       <circle cx="785" cy="690" r="92" fill="none" stroke="rgba(244,196,78,0.45)" stroke-width="3" />
       <text x="785" y="708" font-family="DejaVu Sans, sans-serif" font-size="52" font-weight="bold" fill="#F4C44E" text-anchor="middle">السَّلَامُ</text>
+      <polygon points="560,350 980,350 780,1780 260,1780" fill="url(#sunbeam3D)" />
       <rect x="0" y="1385" width="1080" height="535" fill="#B08359" />
       <ellipse cx="540" cy="1620" rx="420" ry="120" fill="#8C3B2B" opacity="0.35" />
     `;
@@ -468,7 +624,6 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
         </linearGradient>
       </defs>
       <rect width="1080" height="1920" fill="url(#palGrad)" />
-      <!-- 3D Apartment Doors for Al Nour (3A) & M. Martin (3B) -->
       <rect x="65" y="470" width="335" height="900" rx="6" fill="#7A5238" stroke="#593A26" stroke-width="10" filter="url(#dropShadow3D)" />
       <rect x="195" y="560" width="75" height="36" rx="6" fill="#F4C44E" />
       <text x="232" y="585" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="bold" fill="#161412" text-anchor="middle">3A</text>
@@ -480,7 +635,6 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
     `;
   }
 
-  // Desert / Oasis Historical Spiritual Immersion (Strictly zero depiction of Prophets)
   return `
     <defs>
       <linearGradient id="desGrad" x1="0" y1="0" x2="0" y2="1">
@@ -499,9 +653,14 @@ function buildRoomBackgroundSvg(locationId: SceneVisualSpec['locationId']): stri
 }
 
 /**
- * Renders the 3D Glassmorphic Educational HUD Card in the top safe zone (y = 82..405)
+ * Renders the Educational Overlay in 3 adaptive formats:
+ * - `pill_minimal`: Discreet top pill (height 78px) so the scene remains 95% open
+ * - `banner_compact`: Sleek source banner (height 180px)
+ * - `summary_card`: Complete conclusion synthesis card (height 280px)
  */
-function buildEducationalOverlaySvg(overlay: EducationalOverlay): string {
+function buildEducationalOverlaySvg(overlay?: EducationalOverlay | null): string {
+  if (!overlay) return '';
+
   const accentColor =
     overlay.type === 'hadith_quran_card'
       ? '#F4C44E'
@@ -511,21 +670,69 @@ function buildEducationalOverlaySvg(overlay: EducationalOverlay): string {
       ? '#9EC5D6'
       : '#E2A857';
 
-  const wrappedMain = wrapTextLines(overlay.mainText, 54, 2);
   const cleanArabic = (overlay.arabicScript || '')
     .replace(/\u0671/g, '\u0627')
     .replace(/\u0670/g, '')
     .trim();
-  const hasArabic = Boolean(cleanArabic);
-  const arabicFontSize = cleanArabic.length > 42 ? 31 : cleanArabic.length > 28 ? 36 : 42;
-  const cardHeight = hasArabic ? 305 : 225;
-
   const cleanBadge = (overlay.badgeTitle || '')
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '✦')
     .trim();
   const cleanSource = (overlay.sourceOrSubtext || '')
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
     .trim();
+
+  const fmt = overlay.format || 'summary_card';
+
+  // Format 1: Ultra-discreet Minimal Top Pill
+  if (fmt === 'pill_minimal') {
+    const label = cleanArabic
+      ? `${cleanArabic}  •  ${overlay.phonetic || overlay.mainText}`
+      : overlay.mainText;
+    return `
+      <g filter="url(#cardShadow3D)">
+        <rect x="130" y="74" width="820" height="72" rx="36" fill="rgba(20, 17, 15, 0.86)" stroke="${accentColor}" stroke-width="2.5" />
+        <text x="540" y="118" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="bold" fill="#FAF5ED" text-anchor="middle">${escapeXml(
+          label.slice(0, 62)
+        )}</text>
+      </g>
+    `;
+  }
+
+  // Format 2: Compact Source Banner (for Hadith/Quran citation scene)
+  if (fmt === 'banner_compact') {
+    const shortLines = wrapTextLines(overlay.mainText, 58, 2);
+    return `
+      <g filter="url(#cardShadow3D)">
+        <rect x="68" y="76" width="944" height="196" rx="22" fill="rgba(20, 17, 15, 0.88)" stroke="${accentColor}" stroke-width="3" />
+        <text x="540" y="112" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="${accentColor}" text-anchor="middle">${escapeXml(
+          cleanBadge
+        )}</text>
+        ${
+          cleanArabic
+            ? `<text x="540" y="156" font-family="DejaVu Sans, sans-serif" font-size="31" font-weight="bold" fill="#F4C44E" text-anchor="middle">${escapeXml(
+                cleanArabic
+              )}</text>`
+            : ''
+        }
+        <text x="540" y="${cleanArabic ? 196 : 162}" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="bold" fill="#FAF5ED" text-anchor="middle">${escapeXml(
+          shortLines[0] || ''
+        )}</text>
+        ${
+          cleanSource
+            ? `<text x="540" y="246" font-family="DejaVu Sans, sans-serif" font-size="17.5" font-weight="bold" fill="${accentColor}" text-anchor="middle">${escapeXml(
+                cleanSource.slice(0, 74)
+              )}</text>`
+            : ''
+        }
+      </g>
+    `;
+  }
+
+  // Format 3: Full Conclusion Summary Card
+  const wrappedMain = wrapTextLines(overlay.mainText, 54, 2);
+  const hasArabic = Boolean(cleanArabic);
+  const arabicFontSize = cleanArabic.length > 42 ? 31 : cleanArabic.length > 28 ? 36 : 42;
+  const cardHeight = hasArabic ? 305 : 225;
 
   const mainLinesSvg = wrappedMain
     .map(
@@ -538,11 +745,8 @@ function buildEducationalOverlaySvg(overlay: EducationalOverlay): string {
 
   return `
     <g filter="url(#cardShadow3D)">
-      <!-- Outer 3D Glass Card -->
       <rect x="56" y="78" width="968" height="${cardHeight}" rx="26" fill="rgba(20, 17, 15, 0.90)" stroke="${accentColor}" stroke-width="3.5" />
       <rect x="66" y="88" width="948" height="${cardHeight - 20}" rx="20" fill="none" stroke="rgba(255, 255, 255, 0.10)" stroke-width="1.5" />
-
-      <!-- Top Category Pill -->
       <rect x="170" y="60" width="740" height="40" rx="20" fill="#1E1B18" stroke="${accentColor}" stroke-width="2.5" />
       <text x="540" y="87" font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="bold" fill="${accentColor}" text-anchor="middle" letter-spacing="1">${escapeXml(
         cleanBadge
@@ -551,7 +755,6 @@ function buildEducationalOverlaySvg(overlay: EducationalOverlay): string {
       ${
         hasArabic
           ? `
-        <!-- Vocalized Arabic Calligraphy + Phonetic Pill -->
         <text x="540" y="160" font-family="DejaVu Sans, sans-serif" font-size="${arabicFontSize}" font-weight="bold" fill="#F4C44E" text-anchor="middle">${escapeXml(
           cleanArabic
         )}</text>
@@ -567,10 +770,8 @@ function buildEducationalOverlaySvg(overlay: EducationalOverlay): string {
           : ''
       }
 
-      <!-- Main Pedagogical Explanation -->
       ${mainLinesSvg}
 
-      <!-- Source / Citation Footer -->
       ${
         cleanSource
           ? `<text x="540" y="${78 + cardHeight - 22}" font-family="DejaVu Sans, sans-serif" font-size="18.5" font-weight="bold" fill="${accentColor}" text-anchor="middle">${escapeXml(
@@ -582,9 +783,6 @@ function buildEducationalOverlaySvg(overlay: EducationalOverlay): string {
   `;
 }
 
-/**
- * Renders the Active Speaker Badge & Scene Progress Indicator above the subtitle zone
- */
 function buildSpeakerAndProgressHudSvg(scene: SceneVisualSpec): string {
   const speakerLabel = scene.speakerDisplayName || 'Narrateur Al Nour';
   const dotsSvg = Array.from({ length: 8 }, (_, i) => {
@@ -604,9 +802,49 @@ function buildSpeakerAndProgressHudSvg(scene: SceneVisualSpec): string {
         speakerLabel
       )} ◈</text>
     </g>
-    <!-- Bottom Scene Progress Dots -->
     <g>${dotsSvg}</g>
   `;
+}
+
+function buildSharedSvgDefs(): string {
+  return `
+    <defs>
+      <filter id="dropShadow3D" x="-15%" y="-15%" width="130%" height="130%">
+        <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0A0806" flood-opacity="0.38" />
+      </filter>
+      <filter id="cardShadow3D" x="-10%" y="-10%" width="120%" height="125%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#050403" flood-opacity="0.55" />
+      </filter>
+      <radialGradient id="speakerAuraGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(244, 196, 78, 0.34)" />
+        <stop offset="100%" stop-color="rgba(244, 196, 78, 0)" />
+      </radialGradient>
+      <radialGradient id="windowGlow" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stop-color="rgba(255, 245, 200, 0.95)" />
+        <stop offset="100%" stop-color="rgba(255, 215, 120, 0.4)" />
+      </radialGradient>
+      <linearGradient id="sunbeam3D" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(255, 232, 165, 0.34)" />
+        <stop offset="100%" stop-color="rgba(255, 232, 165, 0.02)" />
+      </linearGradient>
+      <linearGradient id="floorGradExt" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#8A7F73" />
+        <stop offset="100%" stop-color="#5C534A" />
+      </linearGradient>
+      <linearGradient id="bottomSubGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(16, 13, 11, 0)" />
+        <stop offset="45%" stop-color="rgba(16, 13, 11, 0.72)" />
+        <stop offset="100%" stop-color="rgba(12, 10, 8, 0.92)" />
+      </linearGradient>
+    </defs>
+  `;
+}
+
+function renderSvgToFile(svgString: string, outPath: string): void {
+  const resvg = new Resvg(svgString, {
+    fitTo: { mode: 'width', value: 1080 }
+  });
+  fs.writeFileSync(outPath, resvg.render().asPng());
 }
 
 export async function renderSceneIllustration(
@@ -616,8 +854,14 @@ export async function renderSceneIllustration(
   research?: ResearchDeliverable,
   episodeTitle?: string
 ): Promise<string> {
-  const filename = `${episodeId}_scene_${scene.sceneNumber}_${Date.now()}.png`;
+  const ts = Date.now();
+  const baseName = `${episodeId}_scene_${scene.sceneNumber}_${ts}`;
+  const filename = `${baseName}.png`;
   const filePath = path.join(OUTPUT_DIR, filename);
+
+  const bgFilename = `${baseName}_bg.png`;
+  const fgFilename = `${baseName}_fg.png`;
+  const cardFilename = `${baseName}_card.png`;
 
   const resolvedOverlay = resolveSceneEducationalOverlay(scene, research, episodeTitle);
   scene.educationalOverlay = resolvedOverlay;
@@ -642,9 +886,26 @@ export async function renderSceneIllustration(
     }
   }
 
-  const activeResidents = scene.residentIds
-    .map(id => allResidents.find(r => r.id === id))
+  const activeResidents = (scene.residentIds || [])
+    .map(rawId => {
+      const clean = String(rawId || '').toLowerCase().trim();
+      return (
+        allResidents.find(r => r.id.toLowerCase() === clean) ||
+        allResidents.find(r => clean.includes(r.id.toLowerCase()) || r.name.toLowerCase().includes(clean))
+      );
+    })
     .filter((r): r is ResidentProfile => Boolean(r));
+
+  if (
+    activeResidents.length === 0 &&
+    scene.speakerId &&
+    scene.speakerId !== 'narrator' &&
+    scene.locationId !== 'desert' &&
+    scene.locationId !== 'oasis'
+  ) {
+    const speakerRes = allResidents.find(r => r.id.toLowerCase() === scene.speakerId.toLowerCase());
+    if (speakerRes) activeResidents.push(speakerRes);
+  }
 
   const count = activeResidents.length;
   const charsSvg = activeResidents
@@ -664,63 +925,51 @@ export async function renderSceneIllustration(
     return `<circle cx="${px}" cy="${py}" r="${r}" fill="rgba(255,228,148,0.52)" />`;
   }).join('\n');
 
-  const fullSvg = `
+  const defsSvg = buildSharedSvgDefs();
+  const roomBgContent = buildRoomBackgroundSvg(scene.locationId);
+  const overlaySvg = buildEducationalOverlaySvg(resolvedOverlay);
+  const hudSvg = buildSpeakerAndProgressHudSvg(scene);
+
+  // 1. Render Parallax Background Layer (_bg.png)
+  const bgSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">${defsSvg}${roomBgContent}</svg>`;
+  renderSvgToFile(bgSvg, path.join(OUTPUT_DIR, bgFilename));
+  scene.bgLayerUrl = `/media/${bgFilename}`;
+
+  // 2. Render Parallax Foreground Character + Lighting Layer (_fg.png with transparent background)
+  const fgSvg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
-      <defs>
-        <filter id="dropShadow3D" x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0A0806" flood-opacity="0.38" />
-        </filter>
-        <filter id="cardShadow3D" x="-10%" y="-10%" width="120%" height="125%">
-          <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#050403" flood-opacity="0.55" />
-        </filter>
-        <radialGradient id="speakerAuraGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="rgba(244, 196, 78, 0.34)" />
-          <stop offset="100%" stop-color="rgba(244, 196, 78, 0)" />
-        </radialGradient>
-        <radialGradient id="windowGlow" cx="50%" cy="50%" r="60%">
-          <stop offset="0%" stop-color="rgba(255, 245, 200, 0.95)" />
-          <stop offset="100%" stop-color="rgba(255, 215, 120, 0.4)" />
-        </radialGradient>
-        <linearGradient id="sunbeam3D" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="rgba(255, 232, 165, 0.32)" />
-          <stop offset="100%" stop-color="rgba(255, 232, 165, 0.02)" />
-        </linearGradient>
-        <linearGradient id="floorGradExt" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#8A7F73" />
-          <stop offset="100%" stop-color="#5C534A" />
-        </linearGradient>
-        <linearGradient id="bottomSubGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="rgba(16, 13, 11, 0)" />
-          <stop offset="45%" stop-color="rgba(16, 13, 11, 0.72)" />
-          <stop offset="100%" stop-color="rgba(12, 10, 8, 0.92)" />
-        </linearGradient>
-      </defs>
-
-      <!-- 1. 2.5D/3D Architectural & HLM Room Layer -->
-      ${buildRoomBackgroundSvg(scene.locationId)}
-
-      <!-- 2. Characters with 3D Depth Shadows & Active Speaker Aura -->
+      ${defsSvg}
       ${charsSvg}
-
-      <!-- 3. Floating Golden Light Dust Particles -->
       ${particlesSvg}
-
-      <!-- 4. Bottom Cinematic Vignette for High-Contrast Subtitles -->
       <rect x="0" y="1400" width="1080" height="520" fill="url(#bottomSubGrad)" />
-
-      <!-- 5. Top Educational HUD Card (Hadith / Du'a / Arabic Key Term / Action Tip) -->
-      ${buildEducationalOverlaySvg(resolvedOverlay)}
-
-      <!-- 6. Active Speaker Pill & 8-Scene Progress Dots -->
-      ${buildSpeakerAndProgressHudSvg(scene)}
+      ${hudSvg}
     </svg>
   `;
+  renderSvgToFile(fgSvg, path.join(OUTPUT_DIR, fgFilename));
+  scene.fgLayerUrl = `/media/${fgFilename}`;
 
-  const resvg = new Resvg(fullSvg, {
-    fitTo: { mode: 'width', value: 1080 }
-  });
-  const pngBuffer = resvg.render().asPng();
-  fs.writeFileSync(filePath, pngBuffer);
+  // 3. Render Isolated Educational Card Layer (_card.png) ONLY if this scene has an overlay
+  if (resolvedOverlay && overlaySvg) {
+    const cardSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">${defsSvg}${overlaySvg}</svg>`;
+    renderSvgToFile(cardSvg, path.join(OUTPUT_DIR, cardFilename));
+    scene.cardLayerUrl = `/media/${cardFilename}`;
+  } else {
+    scene.cardLayerUrl = undefined;
+  }
+
+  // 4. Render Full Composite Preview Image for Studio Storyboard Gallery
+  const fullSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+      ${defsSvg}
+      ${roomBgContent}
+      ${charsSvg}
+      ${particlesSvg}
+      <rect x="0" y="1400" width="1080" height="520" fill="url(#bottomSubGrad)" />
+      ${overlaySvg}
+      ${hudSvg}
+    </svg>
+  `;
+  renderSvgToFile(fullSvg, filePath);
 
   return `/media/${filename}`;
 }

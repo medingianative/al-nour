@@ -199,27 +199,48 @@
         <div class="pt-3 border-t border-[#2E2924] space-y-2">
           <div class="flex items-center justify-between gap-2">
             <label class="block text-xs font-semibold text-[#F4C44E]">
-              ✍️ Donner une consigne à un agent (ou tape `@script ...`, `@son ...`) :
+              ✍️ Donner une consigne (Gemini 3.5 Flash actif sur tous les agents) :
             </label>
             <select
               id="targetGateSelect"
               class="bg-[#141210] border border-[#38312A] rounded px-2 py-1 text-[11px] text-[#FAF5ED]"
             >
-              <option value="">🎯 Agent affiché actuellement</option>
+              <option value="">🎯 Détection intelligente / Agent affiché</option>
               <option value="1_idea">1. Youssef (Idée & Casting)</option>
               <option value="2_research">2. Salma (Sources & Éthique)</option>
               <option value="3_script">3. Karim (Script & Dialogues)</option>
-              <option value="4a_prompts">4a. Leïla (Storyboard 2D)</option>
-              <option value="4b_visuals">4b. Leïla (Images 9:16)</option>
+              <option value="4a_prompts">4a. Leïla (Storyboard & Cartes)</option>
+              <option value="4b_visuals">4b. Leïla (Images & Calques 3D)</option>
               <option value="5_audio">5. Bilal (Voix-Off & Ambiance)</option>
-              <option value="6_video">6. Nadia (Montage MP4)</option>
+              <option value="6_video">6. Nadia (Montage Parallaxe MP4)</option>
             </select>
+          </div>
+          <!-- Quick 1-Click Visual & Pacing Directives -->
+          <div class="flex flex-wrap gap-1.5 text-[10px]">
+            <button
+              onclick="submitQuickDirective('Mets une carte éducative uniquement en conclusion (Plan 8) et active les animations parallaxe 3D')"
+              class="px-2 py-1 rounded bg-[#25211D] hover:bg-[#332D27] text-[#F4C44E] border border-[#3E352D] transition"
+            >
+              🎯 Carte uniquement en conclusion (Plan 8)
+            </button>
+            <button
+              onclick="submitQuickDirective('Dosage autonome équilibré des cartes (moment clé + conclusion) avec mise en scène cinéma 3D')"
+              class="px-2 py-1 rounded bg-[#25211D] hover:bg-[#332D27] text-[#8CD99E] border border-[#3E593B] transition"
+            >
+              ⚖️ Dosage autonome intelligent (2-3 cartes)
+            </button>
+            <button
+              onclick="submitQuickDirective('Aucune carte éducative sur les 8 plans, laisse 100% de place à la mise en scène 3D')"
+              class="px-2 py-1 rounded bg-[#25211D] hover:bg-[#332D27] text-[#9EC5D6] border border-[#38506B] transition"
+            >
+              🎬 Zéro carte (100% Cinéma 3D)
+            </button>
           </div>
           <div class="flex gap-2">
             <input
               id="revisionInput"
               type="text"
-              placeholder="Ex: Dans le script, fais dialoguer davantage Adam et Grand-père Ibrahim..."
+              placeholder="Ex: Mets la carte uniquement en conclusion et ajoute plus d'animations parallaxe 3D..."
               class="flex-1 bg-[#141210] border border-[#38312A] rounded-lg px-3 py-2 text-xs text-[#FAF5ED] focus:outline-none focus:border-[#F4C44E]"
             />
             <button
@@ -744,6 +765,20 @@
 
       let html = '';
 
+      // 0. Green Confirmation Banner when a user revision instruction was applied!
+      if (ep.lastRevisionBanner) {
+        html += `
+          <div class="p-3.5 rounded-xl bg-[#1D2D1C] border-2 border-[#70C18C] space-y-1 text-xs shadow">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-[#8CD99E]">✅ Consigne prise en compte et appliquée (${ep.lastRevisionBanner.agentId} • Porte ${ep.lastRevisionBanner.gateId})</span>
+              <span class="text-[10px] text-[#A89C8E]">Gemini 3.5 Flash + Moteur 3D</span>
+            </div>
+            <div class="text-[#D8CFC4] italic">Ta consigne : « ${ep.lastRevisionBanner.userInstruction} »</div>
+            <div class="text-[#FAF5ED] font-semibold">👉 Ce qui a changé : ${ep.lastRevisionBanner.appliedSummary}</div>
+          </div>
+        `;
+      }
+
       // Banner if any downstream step is stale (out_of_sync)
       if (hasStaleSteps(ep)) {
         html += `
@@ -787,7 +822,7 @@
               </div>
               <p class="text-sm font-bold text-[#FAF5ED]">${ep.steps.idea?.deliverable.title || ep.topicPrompt}</p>
               <p class="text-[#A89C8E]">Format : ${v.resolution} • Durée : ${v.durationSec}s • Taille : ${v.fileSizeMb} Mo</p>
-              <p class="text-[#A89C8E]">Sous-titres : ${v.subtitleStyle}</p>
+              <p class="text-[#A89C8E]">Animation & Sous-titres : ${v.subtitleStyle}</p>
               <div class="pt-2 flex flex-wrap gap-2">
                 <a
                   href="${v.videoFileUrl}"
@@ -892,11 +927,12 @@
       const visualStep = ep.steps.visuals || ep.steps.prompts;
       if (visualStep && visualStep.deliverable.scenes) {
         const scenes = visualStep.deliverable.scenes;
+        const cardsCount = scenes.filter(s => Boolean(s.educationalOverlay && !s.disableEducationalCard)).length;
         html += `
           <div>
-            <div class="flex items-center justify-between text-xs mb-2">
-              <span class="font-bold text-[#FAF5ED]">🖼️ Storyboard 2.5D/3D & Cartes Éducatives 9:16 (${scenes.length} plans — Hadîth, Du'a & Caméra Dynamique)</span>
-              <span class="text-[#A89C8E]">Clique sur 🔄 pour régénérer un plan</span>
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs mb-2">
+              <span class="font-bold text-[#FAF5ED]">🖼️ Storyboard Cinéma 3D Multi-Couches (${scenes.length} plans • ${cardsCount} Carte(s) Éducative(s) animée(s))</span>
+              <span class="text-[#8CD99E] text-[11px]">${visualStep.deliverable.educationalPacingStrategy || 'Parallaxe 3D Fond/Personnages active'}</span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               ${scenes
@@ -906,7 +942,7 @@
                   <div>
                     <div class="flex items-center justify-between mb-1">
                       <span class="font-bold text-[#F4C44E]">Plan ${sc.sceneNumber} (${sc.durationSec}s)</span>
-                      <span class="px-1.5 py-0.5 rounded bg-[#25211D] text-[#9EC5D6] font-mono text-[10px]">🎥 ${sc.cameraMotion || 'zoom_in'}</span>
+                      <span class="px-1.5 py-0.5 rounded bg-[#25211D] text-[#9EC5D6] font-mono text-[10px]">🎥 ${sc.cameraMotion || 'parallax_glide'}</span>
                     </div>
                     ${
                       sc.imageUrl
@@ -914,9 +950,9 @@
                         : `<div class="w-full aspect-[9/16] rounded-lg border border-dashed border-[#38312A] flex items-center justify-center text-[#8C8073] p-2 text-center mb-1.5">En attente validation Porte 4a</div>`
                     }
                     ${
-                      sc.educationalOverlay
-                        ? `<div class="mb-1.5 p-1.5 rounded bg-[#1E1B18] border border-[#F4C44E]/35 text-[10px] space-y-0.5">
-                            <div class="font-bold text-[#F4C44E] truncate">${sc.educationalOverlay.badgeTitle}</div>
+                      sc.educationalOverlay && !sc.disableEducationalCard
+                        ? `<div class="mb-1.5 p-1.5 rounded bg-[#1E1B18] border border-[#F4C44E]/45 text-[10px] space-y-0.5">
+                            <div class="font-bold text-[#F4C44E] truncate">✨ Carte (${sc.educationalOverlay.format || 'summary'}) : ${sc.educationalOverlay.badgeTitle}</div>
                             ${
                               sc.educationalOverlay.arabicScript
                                 ? `<div class="text-[#8CD99E] font-bold">${sc.educationalOverlay.arabicScript}</div>`
@@ -924,7 +960,9 @@
                             }
                             <div class="text-[#D5C7B8] line-clamp-2">${sc.educationalOverlay.mainText}</div>
                           </div>`
-                        : ''
+                        : `<div class="mb-1.5 px-2 py-1 rounded bg-[#1A241E] border border-[#3E593B]/50 text-[10px] text-[#8CD99E]">
+                            🎬 Scène Cinéma 3D Pure (Sans étiquette)
+                          </div>`
                     }
                     <p class="text-[#D8CFC4] line-clamp-2 mb-1">"${sc.subtitleText}"</p>
                   </div>
@@ -1291,6 +1329,12 @@
     async function regenScene(sceneNum) {
       if (!appState.activeEpisode) return;
       await handleTelegramAction(`scene_regen:${appState.activeEpisode.id}:${sceneNum}`);
+    }
+
+    async function submitQuickDirective(directiveText) {
+      const input = document.getElementById('revisionInput');
+      if (input) input.value = directiveText;
+      await submitRevision();
     }
 
     async function submitRevision() {

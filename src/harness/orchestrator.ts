@@ -105,9 +105,11 @@ class AlNourOrchestrator extends EventEmitter {
     });
 
     const now = new Date().toISOString();
+    let appliedSummaryText: string | undefined;
 
     if (gateId === '1_idea') {
       const res = await StudioAgents.runDirector(episode, userFeedback);
+      appliedSummaryText = res.appliedRevisionSummary;
       const history = episode.steps.idea?.userFeedbackHistory || [];
       if (userFeedback) history.push(userFeedback);
       episode.steps.idea = {
@@ -119,6 +121,7 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
+        appliedRevisionSummary: res.appliedRevisionSummary,
         approved: false,
         stale: false
       };
@@ -130,6 +133,7 @@ class AlNourOrchestrator extends EventEmitter {
       if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '2_research') {
       const res = await StudioAgents.runResearcher(episode, userFeedback);
+      appliedSummaryText = res.appliedRevisionSummary;
       const history = episode.steps.research?.userFeedbackHistory || [];
       if (userFeedback) history.push(userFeedback);
       episode.steps.research = {
@@ -141,6 +145,7 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
+        appliedRevisionSummary: res.appliedRevisionSummary,
         approved: false,
         stale: false
       };
@@ -151,6 +156,7 @@ class AlNourOrchestrator extends EventEmitter {
       if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '3_script') {
       const res = await StudioAgents.runScriptwriter(episode, userFeedback);
+      appliedSummaryText = res.appliedRevisionSummary;
       const history = episode.steps.script?.userFeedbackHistory || [];
       if (userFeedback) history.push(userFeedback);
       episode.steps.script = {
@@ -162,6 +168,7 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
+        appliedRevisionSummary: res.appliedRevisionSummary,
         approved: false,
         stale: false
       };
@@ -171,6 +178,7 @@ class AlNourOrchestrator extends EventEmitter {
       if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '4a_prompts') {
       const res = await StudioAgents.runIllustratorPrompts(episode, userFeedback);
+      appliedSummaryText = res.appliedRevisionSummary;
       const history = episode.steps.prompts?.userFeedbackHistory || [];
       if (userFeedback) history.push(userFeedback);
       episode.steps.prompts = {
@@ -182,6 +190,7 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
+        appliedRevisionSummary: res.appliedRevisionSummary,
         approved: false,
         stale: false
       };
@@ -191,8 +200,10 @@ class AlNourOrchestrator extends EventEmitter {
       const res = await StudioAgents.runIllustratorRender(
         episode,
         options?.singleSceneToRegenerate,
-        options?.toggleFluxForScene
+        options?.toggleFluxForScene,
+        userFeedback
       );
+      appliedSummaryText = res.appliedRevisionSummary;
       const history = episode.steps.visuals?.userFeedbackHistory || [];
       if (userFeedback) history.push(userFeedback);
       episode.steps.visuals = {
@@ -204,12 +215,14 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
+        appliedRevisionSummary: res.appliedRevisionSummary,
         approved: false,
         stale: false
       };
       if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '5_audio') {
       const res = await StudioAgents.runSoundEngineer(episode, userFeedback);
+      appliedSummaryText = res.appliedRevisionSummary;
       const history = episode.steps.audio?.userFeedbackHistory || [];
       if (userFeedback) history.push(userFeedback);
       episode.steps.audio = {
@@ -221,12 +234,14 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
+        appliedRevisionSummary: res.appliedRevisionSummary,
         approved: false,
         stale: false
       };
       if (episode.steps.video) episode.steps.video.stale = true;
     } else if (gateId === '6_video') {
-      const res = await StudioAgents.runVideoEditor(episode);
+      const res = await StudioAgents.runVideoEditor(episode, userFeedback);
+      appliedSummaryText = res.appliedRevisionSummary;
       const history = episode.steps.video?.userFeedbackHistory || [];
       if (userFeedback) history.push(userFeedback);
       episode.steps.video = {
@@ -238,8 +253,21 @@ class AlNourOrchestrator extends EventEmitter {
         deliverable: res.deliverable,
         selfCritique: res.selfCritique,
         userFeedbackHistory: history,
+        appliedRevisionSummary: res.appliedRevisionSummary,
         approved: false,
         stale: false
+      };
+    }
+
+    if (userFeedback) {
+      episode.lastRevisionBanner = {
+        agentId,
+        gateId,
+        userInstruction: userFeedback,
+        appliedSummary:
+          appliedSummaryText ||
+          `Consigne « ${userFeedback} » appliquée par ${agentId} sur l'étape ${gateId}.`,
+        timestamp: now
       };
     }
 
@@ -253,7 +281,9 @@ class AlNourOrchestrator extends EventEmitter {
       episodeId: episode.id,
       gateId,
       agentId,
-      message: `Porte [${gateId}] prête avec autocritique — en attente de ta validation ou navigation libre dans l'essaim.`,
+      message: userFeedback
+        ? `✅ Consigne appliquée par [${agentId}] (${gateId}) : ${episode.lastRevisionBanner?.appliedSummary}`
+        : `Porte [${gateId}] prête avec autocritique — en attente de ta validation ou navigation libre dans l'essaim.`,
       episode
     });
 
@@ -612,7 +642,32 @@ class AlNourOrchestrator extends EventEmitter {
       throw new Error(`Épisode introuvable: ${episodeId}`);
     }
 
-    const targetGate = targetGateOverride || (episode.currentGate === 'completed' ? '3_script' : episode.currentGate);
+    const fbLower = feedbackText.toLowerCase();
+    const isVisualOrCardInstruction =
+      fbLower.includes('carte') ||
+      fbLower.includes('étiquette') ||
+      fbLower.includes('etiquette') ||
+      fbLower.includes('animation') ||
+      fbLower.includes('parallaxe') ||
+      fbLower.includes('caméra') ||
+      fbLower.includes('camera') ||
+      fbLower.includes('image') ||
+      fbLower.includes('visuel') ||
+      fbLower.includes('transition');
+
+    let targetGate: ValidationGateId =
+      targetGateOverride || (episode.currentGate === 'completed' ? '3_script' : episode.currentGate);
+
+    if (!targetGateOverride && isVisualOrCardInstruction && episode.steps.script) {
+      if (episode.steps.video && episode.steps.audio) {
+        targetGate = '6_video';
+      } else if (episode.steps.visuals || episode.steps.prompts) {
+        targetGate = '4b_visuals';
+      } else {
+        targetGate = '4a_prompts';
+      }
+    }
+
     const gateToAgent: Record<Exclude<ValidationGateId, 'completed'>, AgentId> = {
       '1_idea': 'director',
       '2_research': 'researcher',

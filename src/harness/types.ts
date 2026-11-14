@@ -96,6 +96,7 @@ export type ScriptDeliverable = z.infer<typeof ScriptDeliverableSchema>;
 
 export const EducationalOverlaySchema = z.object({
   type: z.enum(['context_badge', 'arabic_term_dua', 'hadith_quran_card', 'action_tip']),
+  format: z.enum(['pill_minimal', 'banner_compact', 'summary_card']).optional(),
   badgeTitle: z.string(),
   arabicScript: z.string().optional(),
   phonetic: z.string().optional(),
@@ -113,12 +114,18 @@ export const SceneVisualSpecSchema = z.object({
   locationId: z.enum(['hlm_ext', 'hlm_hall', 'kitchen', 'living', 'bedroom', 'hallway', 'desert', 'oasis']),
   residentIds: z.array(z.string()).max(3),
   pose: z.enum(['dialogue', 'heart', 'dua', 'reading']),
-  cameraMotion: z.enum(['zoom_in', 'pan_right', 'static_breathe']),
+  cameraMotion: z.enum(['zoom_in', 'pan_right', 'static_breathe', 'parallax_glide', 'dramatic_push']),
+  transitionType: z.enum(['fade', 'slideleft', 'smoothup', 'circleopen']).optional(),
+  lightingMood: z.enum(['golden_hour', 'sunbeams', 'night_glow', 'warm_lantern']).optional(),
+  disableEducationalCard: z.boolean().optional(),
   renderEngine: z.enum(['code_2d', 'flux_free']),
   fluxPrompt: z.string(),
   subtitleText: z.string(),
-  educationalOverlay: EducationalOverlaySchema.optional(),
-  imageUrl: z.string().optional()
+  educationalOverlay: EducationalOverlaySchema.nullable().optional(),
+  imageUrl: z.string().optional(),
+  bgLayerUrl: z.string().optional(),
+  fgLayerUrl: z.string().optional(),
+  cardLayerUrl: z.string().optional()
 });
 
 export type SceneVisualSpec = z.infer<typeof SceneVisualSpecSchema>;
@@ -126,6 +133,7 @@ export type SceneVisualSpec = z.infer<typeof SceneVisualSpecSchema>;
 export const IllustratorPromptsDeliverableSchema = z.object({
   visualStyleSummary: z.string(),
   characterConsistencyNotes: z.string(),
+  educationalPacingStrategy: z.string().optional(),
   scenes: z.array(SceneVisualSpecSchema)
 });
 
@@ -170,6 +178,7 @@ export interface StepSubmission<T> {
   deliverable: T;
   selfCritique: SelfCritique;
   userFeedbackHistory: string[];
+  appliedRevisionSummary?: string;
   approved: boolean;
   stale?: boolean;
 }
@@ -182,6 +191,13 @@ export interface Episode {
   currentGate: ValidationGateId;
   activeAgent: AgentId | null;
   activeAgents?: AgentId[];
+  lastRevisionBanner?: {
+    agentId: AgentId;
+    gateId: ValidationGateId;
+    userInstruction: string;
+    appliedSummary: string;
+    timestamp: string;
+  };
   status: 'agent_working' | 'awaiting_user_validation' | 'completed' | 'error';
   steps: {
     idea?: StepSubmission<IdeaDeliverable>;
@@ -198,7 +214,7 @@ export interface AgentModelConfig {
   agentId: AgentId;
   agentName: string;
   roleTitle: string;
-  provider: 'free_autonomous' | 'openrouter_free' | 'groq_free' | 'custom_openai';
+  provider: 'gemini_free' | 'free_autonomous' | 'openrouter_free' | 'groq_free' | 'custom_openai';
   modelId: string;
   temperature: number;
   maxContextTokens: number;

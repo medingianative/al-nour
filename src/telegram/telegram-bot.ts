@@ -25,10 +25,15 @@ function buildSwarmFooter(
   if (episode.steps.audio?.stale) staleSteps.push('5.Audio');
   if (episode.steps.video?.stale) staleSteps.push('6.Vidéo');
 
+  const revisionNotice = episode.lastRevisionBanner
+    ? `\n\n✅ *Consigne appliquée (${episode.lastRevisionBanner.agentId} • ${episode.lastRevisionBanner.gateId})* :\n_« ${episode.lastRevisionBanner.userInstruction} »_\n👉 *Modifications effectuées* : ${episode.lastRevisionBanner.appliedSummary}`
+    : '';
+
   const staleNotice =
-    staleSteps.length > 0
+    revisionNotice +
+    (staleSteps.length > 0
       ? `\n\n⚠️ *Étapes aval à synchroniser* : \`${staleSteps.join(' • ')}\` _(Cache SQLite actif : seules les répliques modifiées seront régénérées)_`
-      : '';
+      : '');
 
   const buttons = [...baseButtons];
 

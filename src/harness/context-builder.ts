@@ -11,6 +11,7 @@ export interface ZeroNoiseContextPacket {
   relevantResidents: Array<Pick<ResidentProfile, 'id' | 'name' | 'age' | 'apartment' | 'roleInBuilding' | 'profession' | 'personalityTraits' | 'outfitDescription'>>;
   relevantLocations: Array<Pick<LocationProfile, 'id' | 'name' | 'category' | 'description'>>;
   upstreamDeliverables: Record<string, unknown>;
+  previousDeliverable?: unknown;
   userRevisionFeedback?: string;
   estimatedPromptTokens: number;
 }
@@ -54,24 +55,35 @@ export function buildZeroNoiseContext(
     description: l.description
   }));
 
-  // Strictly pass ONLY the immediate upstream deliverables needed by this specific agent
+  // Strictly pass ONLY the immediate upstream deliverables needed by this specific agent + its own previousDeliverable when revising
   const upstreamDeliverables: Record<string, unknown> = {};
-  if (agentId === 'researcher' && episode.steps.idea) {
-    upstreamDeliverables.idea = episode.steps.idea.deliverable;
+  let previousDeliverable: unknown = undefined;
+
+  if (agentId === 'director') {
+    previousDeliverable = episode.steps.idea?.deliverable;
+  } else if (agentId === 'researcher') {
+    if (episode.steps.idea) upstreamDeliverables.idea = episode.steps.idea.deliverable;
+    previousDeliverable = episode.steps.research?.deliverable;
   } else if (agentId === 'scriptwriter') {
     upstreamDeliverables.idea = episode.steps.idea?.deliverable;
     upstreamDeliverables.research = episode.steps.research?.deliverable;
+    previousDeliverable = episode.steps.script?.deliverable;
   } else if (agentId === 'illustrator') {
+    upstreamDeliverables.idea = episode.steps.idea?.deliverable;
+    upstreamDeliverables.research = episode.steps.research?.deliverable;
     upstreamDeliverables.script = episode.steps.script?.deliverable;
+    previousDeliverable = episode.steps.visuals?.deliverable || episode.steps.prompts?.deliverable;
   } else if (agentId === 'sound_engineer') {
     upstreamDeliverables.script = {
       narratorVoiceProfile: episode.steps.script?.deliverable.narratorVoiceProfile,
       fullNarrationText: episode.steps.script?.deliverable.fullNarrationText,
       scenes: episode.steps.script?.deliverable.scenes
     };
+    previousDeliverable = episode.steps.audio?.deliverable;
   } else if (agentId === 'video_editor') {
     upstreamDeliverables.visuals = episode.steps.visuals?.deliverable;
     upstreamDeliverables.audio = episode.steps.audio?.deliverable;
+    previousDeliverable = episode.steps.video?.deliverable;
   }
 
   const rawJson = JSON.stringify({
@@ -80,6 +92,7 @@ export function buildZeroNoiseContext(
     relevantResidents,
     relevantLocations,
     upstreamDeliverables,
+    previousDeliverable,
     userRevisionFeedback
   });
 
@@ -94,6 +107,7 @@ export function buildZeroNoiseContext(
     relevantResidents,
     relevantLocations,
     upstreamDeliverables,
+    previousDeliverable,
     userRevisionFeedback,
     estimatedPromptTokens
   };
