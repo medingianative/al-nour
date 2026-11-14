@@ -63,10 +63,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 2. Get full Studio State (Episodes, Residents, Locations, Agent Models, Learned Rules)
+    // 2. Get full Studio State (Episodes, Residents, Locations, Agent Models, Learned Rules, Voice Lab)
     if (req.method === 'GET' && url.pathname === '/api/state') {
       const episodes = MemoryStore.listEpisodes();
       const activeEpisode = episodes[0] || null;
+      const { CHARACTER_VOICE_PROFILES } = await import('./media/audio-engine.js');
       return sendJson(res, 200, {
         telegramBotActive: telegramStatus.active,
         episodes,
@@ -76,8 +77,19 @@ const server = http.createServer(async (req, res) => {
         locations: MemoryStore.getLocations(),
         agentModels: MemoryStore.getAgentModels(),
         learnedRules: MemoryStore.getLearnedRules(),
+        voiceProfiles: Object.values(CHARACTER_VOICE_PROFILES),
         recentEvents: Orchestrator.getRecentEvents()
       });
+    }
+
+    // 2b. Voice Lab: Audition a voice sample
+    if (req.method === 'POST' && url.pathname === '/api/voice-lab/audition') {
+      const body = await readJsonBody(req);
+      const speakerId = (body.speakerId || 'amina') as any;
+      const customText = body.customText ? String(body.customText) : undefined;
+      const { synthesizeSampleVoice } = await import('./media/audio-engine.js');
+      const audioUrl = await synthesizeSampleVoice(speakerId, customText);
+      return sendJson(res, 200, { speakerId, audioUrl });
     }
 
     // 3. Create a New Episode (Starts at Gate 1: Director)

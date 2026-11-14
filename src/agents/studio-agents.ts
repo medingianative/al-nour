@@ -154,6 +154,8 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 1,
               durationSec: 6,
+              speakerId: 'narrator',
+              speakerDisplayName: 'Narrateur',
               spokenText: hookFirst3Seconds,
               visualActionBrief: 'Plan extérieur au coucher du soleil sur la façade du bâtiment HLM et ses fenêtres éclairées.',
               locationId: 'hlm_ext',
@@ -162,7 +164,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 2,
               durationSec: 6,
-              spokenText: `Ce soir-là au 3e étage, Adam posait cette question à son père Tariq après une journée difficile à l'école.`,
+              speakerId: 'adam',
+              speakerDisplayName: 'Adam (10 ans)',
+              spokenText: `« Papa, pourquoi des fois tout est bloqué même quand on fait des Douas ? »`,
               visualActionBrief: 'Dans la chambre d’Adam, Tariq (en pull olive sobre) écoute son fils avec attention.',
               locationId: 'bedroom',
               residentIds: ['tariq', 'adam']
@@ -170,7 +174,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 3,
               durationSec: 6,
-              spokenText: `Grand-père Ibrahim, ancien avocat, s'est approché avec ce calme qui rassure immédiatement.`,
+              speakerId: 'tariq',
+              speakerDisplayName: 'Tariq (Père)',
+              spokenText: `« Viens avec moi Adam, Grand-père Ibrahim a justement une histoire magnifique pour toi. »`,
               visualActionBrief: 'Dans le salon familial, Ibrahim et Khadija accueillent Adam et Lina près de la bibliothèque.',
               locationId: 'living',
               residentIds: ['ibrahim', 'khadija', 'adam']
@@ -178,7 +184,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 4,
               durationSec: 7,
-              spokenText: `Il lui a rappelé qu'autrefois, au cœur du désert silencieux, les cœurs les plus sincères ont eux aussi connu le doute.`,
+              speakerId: 'ibrahim',
+              speakerDisplayName: 'Grand-père Ibrahim',
+              spokenText: `« Mon garçon, au cœur du désert silencieux, les prophètes ont traversé l'obscurité avec un Sabr inébranlable. »`,
               visualActionBrief: 'Immersion visuelle : nuit étoilée du désert et halo doré Al Nour (POV sans représentation).',
               locationId: 'desert',
               residentIds: []
@@ -186,7 +194,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 5,
               durationSec: 7,
-              spokenText: `Mais Allah a révélé une promesse apaisante : certes, avec chaque difficulté se cache déjà une facilité.`,
+              speakerId: 'ibrahim',
+              speakerDisplayName: 'Grand-père Ibrahim',
+              spokenText: `« Et la promesse d'Allah est éternelle : certes, avec chaque difficulté se cache déjà une immense facilité. »`,
               visualActionBrief: 'Immersion visuelle : l’aube dorée se lève sur les arches anciennes et l’oasis.',
               locationId: 'oasis',
               residentIds: []
@@ -194,7 +204,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 6,
               durationSec: 6,
-              spokenText: `Amina, en rentrant de sa garde d'infirmière, a rejoint la famille avec un sourire rempli de Rahma.`,
+              speakerId: 'amina',
+              speakerDisplayName: 'Amina (Mère)',
+              spokenText: `« Assalamou Alaykoum mes amours ! En rentrant de garde, je vois que les cœurs se sont apaisés. »`,
               visualActionBrief: 'Dans la cuisine lumineuse, Amina et Lina partagent un moment chaleureux.',
               locationId: 'kitchen',
               residentIds: ['amina', 'lina']
@@ -202,7 +214,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 7,
               durationSec: 6,
-              spokenText: `Comme un ingénieur qui bâtit un pont, le Sabr construit en silence notre force intérieure.`,
+              speakerId: 'tariq',
+              speakerDisplayName: 'Tariq (Père)',
+              spokenText: `« Tu vois Adam, comme un pont qu'on calcule, la patience bâtit en silence notre force intérieure. »`,
               visualActionBrief: 'Tariq pose la main sur le cœur face à Adam et Ibrahim dans le salon.',
               locationId: 'living',
               residentIds: ['tariq', 'ibrahim', 'adam']
@@ -210,6 +224,8 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 8,
               durationSec: 6,
+              speakerId: 'narrator',
+              speakerDisplayName: 'Narrateur',
               spokenText: `Alhamdulillah. Quelle que soit ton épreuve ce soir, garde confiance : la lumière finit toujours par entrer.`,
               visualActionBrief: 'Plan final apaisant sur le bâtiment HLM illuminé dans la douceur du soir.',
               locationId: 'hlm_ext',
@@ -220,6 +236,8 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 1,
               durationSec: 6,
+              speakerId: 'narrator',
+              speakerDisplayName: 'Narrateur',
               spokenText: hookFirst3Seconds,
               visualActionBrief: 'Plan d’ouverture sur le bâtiment HLM du quartier à l’heure dorée, fenêtres éclairées.',
               locationId: 'hlm_ext',
@@ -228,7 +246,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 2,
               durationSec: 6,
-              spokenText: `En rentrant de sa garde d'infirmière, Amina a croisé M. Martin près des boîtes aux lettres du hall.`,
+              speakerId: 'amina',
+              speakerDisplayName: 'Amina (Mère)',
+              spokenText: `« Bonsoir M. Martin ! Vous avez l'air chargé, laissez-moi vous tenir la porte du hall. »`,
               visualActionBrief: 'Dans le hall d’entrée du HLM devant les boîtes aux lettres, Amina salue M. Martin avec respect.',
               locationId: 'hlm_hall',
               residentIds: ['amina', 'martin']
@@ -236,7 +256,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 3,
               durationSec: 6,
-              spokenText: `Un simple mot sincère pour prendre de ses nouvelles a suffi à illuminer son visage fatigué.`,
+              speakerId: 'martin',
+              speakerDisplayName: 'M. Martin (Voisin)',
+              spokenText: `« Merci mille fois Amina, c'est vraiment très aimable à vous après votre longue journée d'hôpital ! »`,
               visualActionBrief: 'Sur le palier du 3e étage, Tariq et M. Martin échangent avec bienveillance.',
               locationId: 'hallway',
               residentIds: ['tariq', 'martin']
@@ -244,7 +266,9 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 4,
               durationSec: 6,
-              spokenText: `Dans la cuisine, la petite Lina a demandé : « Maman, pourquoi tu prends toujours ce temps-là ? »`,
+              speakerId: 'lina',
+              speakerDisplayName: 'Lina (6 ans)',
+              spokenText: `« Maman, pourquoi M. Martin a souri tout de suite quand tu lui as parlé gentiment ? »`,
               visualActionBrief: 'Dans la cuisine moderne, Amina prépare le repas aux côtés de Lina et Adam.',
               locationId: 'kitchen',
               residentIds: ['amina', 'lina', 'adam']
@@ -252,15 +276,19 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 5,
               durationSec: 7,
-              spokenText: `Grand-père Ibrahim, avec sa justesse d'ancien avocat, a rappelé cette parole prophétique essentielle :`,
+              speakerId: 'ibrahim',
+              speakerDisplayName: 'Grand-père Ibrahim',
+              spokenText: `« Ma petite Lina, le Prophète a dit : que celui qui croit en Dieu soit plein de bonté envers son voisin. »`,
               visualActionBrief: 'Dans le salon familial devant la bibliothèque, Ibrahim et Khadija parlent aux enfants.',
               locationId: 'living',
               residentIds: ['ibrahim', 'khadija', 'lina']
             },
             {
               sceneNumber: 6,
-              durationSec: 7,
-              spokenText: `« Que celui qui croit en Allah et au Jour Dernier soit plein de bonté envers son voisin. »`,
+              durationSec: 6,
+              speakerId: 'tariq',
+              speakerDisplayName: 'Tariq (Père)',
+              spokenText: `« L'Islam ne se montre pas par de longs discours, mais par la délicatesse et la sincérité du cœur. »`,
               visualActionBrief: 'Plan poétique de lumière dorée apaisante sur l’oasis à l’aube.',
               locationId: 'oasis',
               residentIds: []
@@ -268,15 +296,19 @@ Réponds uniquement en JSON { "deliverable": ScriptDeliverable, "selfCritique": 
             {
               sceneNumber: 7,
               durationSec: 6,
-              spokenText: `L'Islam ne se montre pas par de grands discours, mais par la douceur d'une présence sincère.`,
+              speakerId: 'adam',
+              speakerDisplayName: 'Adam (10 ans)',
+              spokenText: `« Alors demain, dès que je croise quelqu'un dans l'ascenseur, je lui dis Salam avec un grand sourire ! »`,
               visualActionBrief: 'Dans la chambre des enfants le soir, Tariq et Amina veillent sur Adam et Lina.',
               locationId: 'bedroom',
               residentIds: ['tariq', 'amina', 'adam']
             },
             {
-              sceneNumber: 6,
+              sceneNumber: 8,
               durationSec: 6,
-              spokenText: `Et si demain, dans ton immeuble, le plus beau rappel commençait par un simple Salam et un sourire ?`,
+              speakerId: 'narrator',
+              speakerDisplayName: 'Narrateur',
+              spokenText: `Et si ce soir, dans ton immeuble, la plus belle aumône commençait par un simple sourire sincère ?`,
               visualActionBrief: 'Retour sur la façade du bâtiment HLM paisible à la tombée de la nuit.',
               locationId: 'hlm_ext',
               residentIds: ['tariq', 'martin', 'adam']
@@ -351,6 +383,8 @@ Réponds uniquement en JSON { "deliverable": IllustratorPromptsDeliverable, "sel
         return {
           sceneNumber: sc.sceneNumber,
           durationSec: sc.durationSec,
+          speakerId: sc.speakerId || 'narrator',
+          speakerDisplayName: sc.speakerDisplayName || 'Narrateur',
           locationId: loc,
           residentIds: sc.residentIds.slice(0, 3),
           pose: poses[idx % poses.length],

@@ -259,6 +259,20 @@ export function startTelegramBotIfConfigured(): { active: boolean; botUsername?:
     await ctx.reply(`🏢 *Habitants du Bâtiment HLM Al Nour* :\n\n${list}`, { parse_mode: 'Markdown' });
   });
 
+  bot.command('voix', async ctx => {
+    const { CHARACTER_VOICE_PROFILES } = await import('../media/audio-engine.js');
+    const kb = new InlineKeyboard();
+    Object.values(CHARACTER_VOICE_PROFILES).forEach((p, i) => {
+      kb.text(`🎙️ ${p.displayName}`, `sample_voice:${p.speakerId}`);
+      if (i % 2 === 1) kb.row();
+    });
+    await ctx.reply(
+      `🎙️ *Voice Lab — Valide et écoute les voix de chaque personnage :*\n\n` +
+      `Clique sur un personnage pour recevoir son extrait audio haute fidélité (avec prononciation arabe naturelle : Bismillah, Alhamdulillah, Salam) :`,
+      { parse_mode: 'Markdown', reply_markup: kb }
+    );
+  });
+
   bot.command('regles', async ctx => {
     const rules = MemoryStore.getLearnedRules()
       .slice(0, 10)
@@ -280,6 +294,24 @@ export function startTelegramBotIfConfigured(): { active: boolean; botUsername?:
 
   bot.on('callback_query:data', async ctx => {
     const data = ctx.callbackQuery.data;
+
+    if (data.startsWith('sample_voice:')) {
+      const speakerId = data.replace('sample_voice:', '') as any;
+      await ctx.answerCallbackQuery('Génération de l’échantillon vocal...');
+      const { synthesizeSampleVoice, CHARACTER_VOICE_PROFILES } = await import('../media/audio-engine.js');
+      const audioUrl = await synthesizeSampleVoice(speakerId);
+      const rel = audioUrl.replace(/^\/media\//, '');
+      const diskPath = path.resolve(process.cwd(), 'public', 'media', rel);
+      const profile = CHARACTER_VOICE_PROFILES[speakerId] || CHARACTER_VOICE_PROFILES.narrator;
+      if (fs.existsSync(diskPath) && ctx.chat) {
+        await bot.api.sendVoice(ctx.chat.id, new InputFile(diskPath), {
+          caption: `🎙️ *Échantillon Vocal — ${profile.displayName}*\n« _${profile.sampleQuote}_ »\n\n*Timbre* : ${profile.toneDescription}`,
+          parse_mode: 'Markdown'
+        });
+      }
+      return;
+    }
+
     const [action, epId, param] = data.split(':');
     await ctx.answerCallbackQuery('Traitement en cours...');
     if (!epId) return;

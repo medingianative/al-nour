@@ -55,14 +55,31 @@ export const ResearchDeliverableSchema = z.object({
 
 export type ResearchDeliverable = z.infer<typeof ResearchDeliverableSchema>;
 
+export const SpeakerProfileIdSchema = z.enum([
+  'narrator',
+  'tariq',
+  'amina',
+  'adam',
+  'lina',
+  'ibrahim',
+  'khadija',
+  'martin'
+]);
+
+export type SpeakerProfileId = z.infer<typeof SpeakerProfileIdSchema>;
+
 export const ScriptSceneSegmentSchema = z.object({
   sceneNumber: z.number(),
   durationSec: z.number(),
+  speakerId: SpeakerProfileIdSchema.default('narrator'),
+  speakerDisplayName: z.string(),
   spokenText: z.string(),
   visualActionBrief: z.string(),
   locationId: z.string(),
   residentIds: z.array(z.string())
 });
+
+export type ScriptSceneSegment = z.infer<typeof ScriptSceneSegmentSchema>;
 
 export const ScriptDeliverableSchema = z.object({
   hookFirst3Seconds: z.string(),
@@ -80,6 +97,8 @@ export type ScriptDeliverable = z.infer<typeof ScriptDeliverableSchema>;
 export const SceneVisualSpecSchema = z.object({
   sceneNumber: z.number(),
   durationSec: z.number(),
+  speakerId: SpeakerProfileIdSchema.default('narrator'),
+  speakerDisplayName: z.string(),
   locationId: z.enum(['hlm_ext', 'hlm_hall', 'kitchen', 'living', 'bedroom', 'hallway', 'desert', 'oasis']),
   residentIds: z.array(z.string()).max(3),
   pose: z.enum(['dialogue', 'heart', 'dua', 'reading']),
@@ -170,4 +189,16 @@ export interface AgentModelConfig {
   temperature: number;
   maxContextTokens: number;
   rationale: string;
+}
+
+export interface CharacterVoiceConfig {
+  speakerId: SpeakerProfileId;
+  displayName: string;
+  role: string;
+  gender: 'male' | 'female';
+  toneDescription: string;
+  pitchShift: number; // 0.85 = deeper, 1.25 = child
+  tempoMultiplier: number;
+  sampleQuote: string;
+  elevenLabsVoiceId?: string;
 }
