@@ -94,6 +94,17 @@ export const ScriptDeliverableSchema = z.object({
 
 export type ScriptDeliverable = z.infer<typeof ScriptDeliverableSchema>;
 
+export const EducationalOverlaySchema = z.object({
+  type: z.enum(['context_badge', 'arabic_term_dua', 'hadith_quran_card', 'action_tip']),
+  badgeTitle: z.string(),
+  arabicScript: z.string().optional(),
+  phonetic: z.string().optional(),
+  mainText: z.string(),
+  sourceOrSubtext: z.string().optional()
+});
+
+export type EducationalOverlay = z.infer<typeof EducationalOverlaySchema>;
+
 export const SceneVisualSpecSchema = z.object({
   sceneNumber: z.number(),
   durationSec: z.number(),
@@ -106,6 +117,7 @@ export const SceneVisualSpecSchema = z.object({
   renderEngine: z.enum(['code_2d', 'flux_free']),
   fluxPrompt: z.string(),
   subtitleText: z.string(),
+  educationalOverlay: EducationalOverlaySchema.optional(),
   imageUrl: z.string().optional()
 });
 

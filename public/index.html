@@ -895,7 +895,7 @@
         html += `
           <div>
             <div class="flex items-center justify-between text-xs mb-2">
-              <span class="font-bold text-[#FAF5ED]">🖼️ Storyboard & Illustrations 9:16 (${scenes.length} plans — Immeuble HLM & Famille)</span>
+              <span class="font-bold text-[#FAF5ED]">🖼️ Storyboard 2.5D/3D & Cartes Éducatives 9:16 (${scenes.length} plans — Hadîth, Du'a & Caméra Dynamique)</span>
               <span class="text-[#A89C8E]">Clique sur 🔄 pour régénérer un plan</span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -906,12 +906,25 @@
                   <div>
                     <div class="flex items-center justify-between mb-1">
                       <span class="font-bold text-[#F4C44E]">Plan ${sc.sceneNumber} (${sc.durationSec}s)</span>
-                      <span class="px-1.5 py-0.5 rounded bg-[#25211D] text-[#9EC5D6] font-mono text-[10px]">${sc.locationId}</span>
+                      <span class="px-1.5 py-0.5 rounded bg-[#25211D] text-[#9EC5D6] font-mono text-[10px]">🎥 ${sc.cameraMotion || 'zoom_in'}</span>
                     </div>
                     ${
                       sc.imageUrl
-                        ? `<img src="${sc.imageUrl}" alt="Plan ${sc.sceneNumber}" class="w-full aspect-[9/16] object-cover rounded-lg border border-[#332C25] mb-1.5" />`
+                        ? `<img src="${sc.imageUrl}?t=${encodeURIComponent(visualStep.createdAt || '')}" alt="Plan ${sc.sceneNumber}" class="w-full aspect-[9/16] object-cover rounded-lg border border-[#332C25] mb-1.5" />`
                         : `<div class="w-full aspect-[9/16] rounded-lg border border-dashed border-[#38312A] flex items-center justify-center text-[#8C8073] p-2 text-center mb-1.5">En attente validation Porte 4a</div>`
+                    }
+                    ${
+                      sc.educationalOverlay
+                        ? `<div class="mb-1.5 p-1.5 rounded bg-[#1E1B18] border border-[#F4C44E]/35 text-[10px] space-y-0.5">
+                            <div class="font-bold text-[#F4C44E] truncate">${sc.educationalOverlay.badgeTitle}</div>
+                            ${
+                              sc.educationalOverlay.arabicScript
+                                ? `<div class="text-[#8CD99E] font-bold">${sc.educationalOverlay.arabicScript}</div>`
+                                : ''
+                            }
+                            <div class="text-[#D5C7B8] line-clamp-2">${sc.educationalOverlay.mainText}</div>
+                          </div>`
+                        : ''
                     }
                     <p class="text-[#D8CFC4] line-clamp-2 mb-1">"${sc.subtitleText}"</p>
                   </div>
