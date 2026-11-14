@@ -6,24 +6,24 @@ export interface PhoneticMapping {
 }
 
 export const ISLAMIC_PHONETIC_GLOSSARY: PhoneticMapping[] = [
-  { term: 'Bismillah', pattern: /\bBismillah(i| ar-Rahman ar-Rahim)?\b/gi, arabicScript: 'بِسْمِ ٱللَّٰهِ', frenchPhonetic: 'Biss-mil-lah' },
-  { term: 'Alhamdulillah', pattern: /\bAlhamdulillah\b/gi, arabicScript: 'ٱلْحَمْدُ لِلَّٰهِ', frenchPhonetic: 'Al-ham-dou-lil-lah' },
-  { term: 'SubhanAllah', pattern: /\bSubhanAllah\b/gi, arabicScript: 'سُبْحَانَ ٱللَّٰهِ', frenchPhonetic: 'Soub-ha-nal-lah' },
-  { term: 'InshaAllah', pattern: /\bInshaAllah\b/gi, arabicScript: 'إِن شَاءَ ٱللَّٰهُ', frenchPhonetic: 'In-cha-Al-lah' },
-  { term: 'MashaAllah', pattern: /\bMashaAllah\b/gi, arabicScript: 'مَا شَاءَ ٱللَّٰهُ', frenchPhonetic: 'Ma-cha-Al-lah' },
-  { term: 'Astaghfirullah', pattern: /\bAstaghfirullah\b/gi, arabicScript: 'أَسْتَغْفِرُ ٱللَّٰهَ', frenchPhonetic: 'Ass-tagh-fi-roul-lah' },
-  { term: 'Assalamou Alaykoum', pattern: /\b(As-?salamou|Assalamou)\s+Alaykoum( wa Rahmatoullah)?\b/gi, arabicScript: 'ٱلسَّلَامُ عَلَيْكُمْ', frenchPhonetic: 'As-sa-la-mou a-lay-koum' },
-  { term: 'Salam', pattern: /\bSalam\b/gi, arabicScript: 'سَلَام', frenchPhonetic: 'Sa-lam' },
-  { term: 'Rahma', pattern: /\bRahma\b/gi, arabicScript: 'رَحْمَة', frenchPhonetic: 'Rah-ma' },
-  { term: 'Sabr', pattern: /\bSabr\b/gi, arabicScript: 'صَبْر', frenchPhonetic: 'Sab-re' },
-  { term: 'Adab', pattern: /\bAdab\b/gi, arabicScript: 'أَدَب', frenchPhonetic: 'A-dabe' },
-  { term: 'Akhlaq', pattern: /\bAkhlaq\b/gi, arabicScript: 'أَخْلَاق', frenchPhonetic: 'Akh-laq' },
-  { term: 'Sadaqa', pattern: /\bSadaqa\b/gi, arabicScript: 'صَدَقَة', frenchPhonetic: 'Sa-da-qa' },
-  { term: 'Baraka', pattern: /\bBaraka\b/gi, arabicScript: 'بَرَكَة', frenchPhonetic: 'Ba-ra-ka' },
-  { term: 'Tawakkul', pattern: /\bTawakkul\b/gi, arabicScript: 'تَوَكُّل', frenchPhonetic: 'Ta-wak-koul' },
-  { term: 'Hadith', pattern: /\bhadith(s)?\b/gi, arabicScript: 'حَدِيث', frenchPhonetic: 'Ha-diss' },
-  { term: 'Sourate', pattern: /\bsourate\b/gi, arabicScript: 'سُورَة', frenchPhonetic: 'Sou-rate' },
-  { term: 'Al Nour', pattern: /\bAl[- ]?Nour\b/gi, arabicScript: 'النُّور', frenchPhonetic: 'Al-Nour' }
+  { term: 'Bismillah', pattern: /\bBismillah(i| ar-Rahman ar-Rahim)?\b/gi, arabicScript: 'بِسْمِ ٱللَّٰهِ', frenchPhonetic: 'Bismillah' },
+  { term: 'Alhamdulillah', pattern: /\bAlhamdulillah\b/gi, arabicScript: 'ٱلْحَمْدُ لِلَّٰهِ', frenchPhonetic: 'Alhamdoulillah' },
+  { term: 'SubhanAllah', pattern: /\bSubhanAllah\b/gi, arabicScript: 'سُبْحَانَ ٱللَّٰهِ', frenchPhonetic: 'Soubhanallah' },
+  { term: 'InshaAllah', pattern: /\bInshaAllah\b/gi, arabicScript: 'إِن شَاءَ ٱللَّٰهُ', frenchPhonetic: 'Incha Allah' },
+  { term: 'MashaAllah', pattern: /\bMashaAllah\b/gi, arabicScript: 'مَا شَاءَ ٱللَّٰهُ', frenchPhonetic: 'Macha Allah' },
+  { term: 'Astaghfirullah', pattern: /\bAstaghfirullah\b/gi, arabicScript: 'أَسْتَغْفِرُ ٱللَّٰهَ', frenchPhonetic: 'Astaghfiroullah' },
+  { term: 'Assalamou Alaykoum', pattern: /\b(As-?salamou|Assalamou)\s+Alaykoum( wa Rahmatoullah)?\b/gi, arabicScript: 'ٱلسَّلَامُ عَلَيْكُمْ', frenchPhonetic: 'Assalamou alaykoum' },
+  { term: 'Salam', pattern: /\bSalam\b/gi, arabicScript: 'سَلَام', frenchPhonetic: 'Salam' },
+  { term: 'Rahma', pattern: /\bRahma\b/gi, arabicScript: 'رَحْمَة', frenchPhonetic: 'Rahma' },
+  { term: 'Sabr', pattern: /\bSabr\b/gi, arabicScript: 'صَبْر', frenchPhonetic: 'Sabre' },
+  { term: 'Adab', pattern: /\bAdab\b/gi, arabicScript: 'أَدَب', frenchPhonetic: 'Adabe' },
+  { term: 'Akhlaq', pattern: /\bAkhlaq\b/gi, arabicScript: 'أَخْلَاق', frenchPhonetic: 'Akhlaq' },
+  { term: 'Sadaqa', pattern: /\bSadaqa\b/gi, arabicScript: 'صَدَقَة', frenchPhonetic: 'Sadaqa' },
+  { term: 'Baraka', pattern: /\bBaraka\b/gi, arabicScript: 'بَرَكَة', frenchPhonetic: 'Baraka' },
+  { term: 'Tawakkul', pattern: /\bTawakkul\b/gi, arabicScript: 'تَوَكُّل', frenchPhonetic: 'Tawakkoul' },
+  { term: 'Hadith', pattern: /\bhadith(s)?\b/gi, arabicScript: 'حَدِيث', frenchPhonetic: 'Hadisse' },
+  { term: 'Sourate', pattern: /\bsourate\b/gi, arabicScript: 'سُورَة', frenchPhonetic: 'Sourate' },
+  { term: 'Al Nour', pattern: /\bAl[- ]?Nour\b/gi, arabicScript: 'النُّور', frenchPhonetic: 'Al Nour' }
 ];
 
 export function splitTextIntoLinguisticTokens(text: string): Array<{ text: string; lang: 'fr' | 'ar' }> {

@@ -197,8 +197,12 @@ export interface CharacterVoiceConfig {
   role: string;
   gender: 'male' | 'female';
   toneDescription: string;
-  pitchShift: number; // 0.85 = deeper, 1.25 = child
+  piperModel: 'fr_FR-tom-medium.onnx' | 'fr_FR-upmc-medium.onnx' | 'fr_FR-siwis-medium.onnx';
+  piperSpeakerId?: number;
+  piperLengthScale: number;
+  pitchShift: number;
   tempoMultiplier: number;
   sampleQuote: string;
   elevenLabsVoiceId?: string;
 }
+

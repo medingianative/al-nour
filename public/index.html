@@ -181,10 +181,10 @@
       <div id="tab-voicelab" class="hidden p-4 flex-1 space-y-4 overflow-y-auto">
         <div>
           <h3 class="text-sm font-bold text-[#FAF5ED] mb-1">
-            🎙️ Voice Lab — Écoute & Validation des Voix des Personnages
+            🎙️ Voice Lab — Voix Neuronales Locales Piper-TTS ONNX (Hommes & Femmes)
           </h3>
           <p class="text-xs text-[#A89C8E]">
-            Voix humaines polyphoniques avec dialectique bilingue arabe-français naturelle (prononciation authentique de <em>Bismillah, Alhamdulillah, Salam, Rahma</em>). Teste chaque personnage :
+            Modèles neuronaux français dédiés par genre et âge (<strong>Tom 44.1kHz</strong> pour Ibrahim & Narrateur, <strong>Pierre UPMC</strong> pour Tariq, M. Martin & Adam, <strong>Jessica UPMC</strong> pour Amina & Lina, <strong>Siwis</strong> pour Khadija) en souffle continu avec phonétique arabe fluide :
           </p>
         </div>
 
@@ -194,13 +194,14 @@
           <span class="font-bold text-[#F4C44E]">✨ Tester une phrase personnalisée pour un personnage :</span>
           <div class="flex gap-2">
             <select id="customVoiceSpeaker" class="bg-[#1E1B18] border border-[#38312A] rounded px-2 text-[#FAF5ED]">
-              <option value="amina">Amina (Infirmière)</option>
-              <option value="tariq">Tariq (Ingénieur)</option>
-              <option value="adam">Adam (10 ans)</option>
-              <option value="lina">Lina (6 ans)</option>
-              <option value="ibrahim">Grand-père Ibrahim</option>
-              <option value="martin">M. Martin (Voisin)</option>
-              <option value="narrator">Narrateur</option>
+              <option value="ibrahim">Grand-père Ibrahim (Homme grave)</option>
+              <option value="tariq">Tariq • Père Ingénieur (Homme)</option>
+              <option value="amina">Amina • Mère Infirmière (Femme)</option>
+              <option value="khadija">Grand-mère Khadija (Femme mûre)</option>
+              <option value="adam">Adam • 10 ans (Garçon)</option>
+              <option value="lina">Lina • 6 ans (Fille)</option>
+              <option value="martin">M. Martin • Voisin (Homme)</option>
+              <option value="narrator">Narrateur Al Nour (Homme)</option>
             </select>
             <input id="customVoiceText" placeholder="Ex: Assalamou Alaykoum M. Martin, un grand merci !" class="flex-1 bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
             <button onclick="auditionCustomVoice()" class="px-3 py-1.5 rounded bg-[#F4C44E] hover:bg-[#E2B03B] text-[#161412] font-semibold">

@@ -1,9 +1,9 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CharacterVoiceConfig, ScriptDeliverable, SoundDeliverable, SpeakerProfileId } from '../harness/types.js';
-import { formatPhoneticFrench, splitTextIntoLinguisticTokens } from './phonetic-dictionary.js';
+import { formatPhoneticFrench } from './phonetic-dictionary.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -12,144 +12,206 @@ if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
+const PIPER_DIR = path.resolve(process.cwd(), 'models', 'piper');
+const PIPER_BIN = path.join(PIPER_DIR, 'piper', 'piper');
+
 export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceConfig> = {
   narrator: {
     speakerId: 'narrator',
     displayName: 'Narrateur (Al Nour)',
-    role: 'Voix signature calme & posée',
+    role: 'Voix masculine signature calme & posée (Modèle Neuronal Tom 44.1kHz)',
     gender: 'male',
     toneDescription: 'Voix masculine sereine, articulée et bienveillante pour ouvrir et clore l’épisode',
-    pitchShift: 0.95,
-    tempoMultiplier: 0.96,
+    piperModel: 'fr_FR-tom-medium.onnx',
+    piperLengthScale: 1.04,
+    pitchShift: 0.99,
+    tempoMultiplier: 1.0,
     sampleQuote: 'Bismillah. Dans notre bâtiment HLM, chaque fenêtre éclairée raconte une histoire, une foi, une vie.',
     elevenLabsVoiceId: 'Adam'
   },
   tariq: {
     speakerId: 'tariq',
     displayName: 'Tariq (Père • Ingénieur)',
-    role: 'Père pédagogue et rassurant',
+    role: 'Voix masculine adulte chaleureuse (Modèle Neuronal Pierre UPMC)',
     gender: 'male',
     toneDescription: 'Voix posée, chaleureuse, naturelle d’un père qui écoute et transmet avec douceur',
-    pitchShift: 0.92,
-    tempoMultiplier: 0.98,
+    piperModel: 'fr_FR-upmc-medium.onnx',
+    piperSpeakerId: 1,
+    piperLengthScale: 1.0,
+    pitchShift: 1.0,
+    tempoMultiplier: 1.0,
     sampleQuote: 'Assalamou Alaykoum. Comme un pont que l’on construit, le Sabr forge notre cœur dans le silence.',
     elevenLabsVoiceId: 'Antoni'
   },
   amina: {
     speakerId: 'amina',
     displayName: 'Amina (Mère • Infirmière)',
-    role: 'Mère douce, solaire et réconfortante',
+    role: 'Voix féminine douce & lumineuse (Modèle Neuronal Jessica UPMC)',
     gender: 'female',
     toneDescription: 'Voix féminine empathique, lumineuse et pleine de Rahma',
-    pitchShift: 1.02,
+    piperModel: 'fr_FR-upmc-medium.onnx',
+    piperSpeakerId: 0,
+    piperLengthScale: 1.0,
+    pitchShift: 1.0,
     tempoMultiplier: 1.0,
     sampleQuote: 'Alhamdulillah pour cette journée. En rentrant de garde, le plus beau cadeau reste le sourire d’un voisin.',
     elevenLabsVoiceId: 'Rachel'
   },
-  adam: {
-    speakerId: 'adam',
-    displayName: 'Adam (Fils • 10 ans)',
-    role: 'Garçon curieux et spontané',
-    gender: 'male',
-    toneDescription: 'Voix jeune, vive et sincère d’un enfant qui pose des questions du fond du cœur',
-    pitchShift: 1.28,
-    tempoMultiplier: 1.05,
-    sampleQuote: 'Papa, pourquoi Dieu permet que des choses difficiles nous arrivent même quand on essaie de bien faire ?',
-    elevenLabsVoiceId: 'Josh'
-  },
-  lina: {
-    speakerId: 'lina',
-    displayName: 'Lina (Petite Fille • 6 ans)',
-    role: 'Petite fille émerveillée et tendre',
-    gender: 'female',
-    toneDescription: 'Voix douce, joyeuse et enfantine qui rappelle la simplicité du cœur',
-    pitchShift: 1.42,
-    tempoMultiplier: 1.06,
-    sampleQuote: 'Maman, regarde ! M. Martin avait l’air triste, est-ce qu’on peut lui donner nos petits gâteaux ?',
-    elevenLabsVoiceId: 'Domi'
-  },
   ibrahim: {
     speakerId: 'ibrahim',
     displayName: 'Ibrahim (Grand-père • Ex-Avocat)',
-    role: 'Grand-père érudit, noble et juste',
+    role: 'Voix masculine grave, mûre & posée (Modèle Neuronal Tom Grave)',
     gender: 'male',
     toneDescription: 'Voix masculine mûre, profonde et apaisante qui porte le poids de la sagesse et du droit',
-    pitchShift: 0.86,
-    tempoMultiplier: 0.92,
+    piperModel: 'fr_FR-tom-medium.onnx',
+    piperLengthScale: 1.1,
+    pitchShift: 0.94,
+    tempoMultiplier: 0.98,
     sampleQuote: 'Mon petit-fils, la vraie justice commence toujours par écouter avec le cœur avant de juger.',
     elevenLabsVoiceId: 'Arnold'
   },
   khadija: {
     speakerId: 'khadija',
     displayName: 'Khadija (Grand-mère)',
-    role: 'Grand-mère pleine de tendresse',
+    role: 'Voix féminine mature & enveloppante (Modèle Neuronal Siwis)',
     gender: 'female',
-    toneDescription: 'Voix douce et mature qui enveloppe d’amour et d’invocations sincères',
+    toneDescription: 'Voix féminine douce et mature qui enveloppe d’amour et d’invocations sincères',
+    piperModel: 'fr_FR-siwis-medium.onnx',
+    piperLengthScale: 1.08,
     pitchShift: 0.96,
-    tempoMultiplier: 0.95,
+    tempoMultiplier: 0.98,
     sampleQuote: 'Qu’Allah bénisse ce foyer. Une parole douce dans ce couloir vaut bien plus que de grands discours.',
     elevenLabsVoiceId: 'Bella'
+  },
+  adam: {
+    speakerId: 'adam',
+    displayName: 'Adam (Fils • 10 ans)',
+    role: 'Voix de jeune garçon curieux & spontané (Modèle Neuronal Pierre Jeune)',
+    gender: 'male',
+    toneDescription: 'Voix jeune, vive et sincère d’un garçon de 10 ans qui pose des questions du fond du cœur',
+    piperModel: 'fr_FR-upmc-medium.onnx',
+    piperSpeakerId: 1,
+    piperLengthScale: 0.96,
+    pitchShift: 1.16,
+    tempoMultiplier: 1.02,
+    sampleQuote: 'Papa, pourquoi Dieu permet que des choses difficiles nous arrivent même quand on essaie de bien faire ?',
+    elevenLabsVoiceId: 'Josh'
+  },
+  lina: {
+    speakerId: 'lina',
+    displayName: 'Lina (Petite Fille • 6 ans)',
+    role: 'Voix de petite fille tendre & émerveillée (Modèle Neuronal Jessica Enfant)',
+    gender: 'female',
+    toneDescription: 'Voix douce, joyeuse et enfantine qui rappelle la simplicité du cœur',
+    piperModel: 'fr_FR-upmc-medium.onnx',
+    piperSpeakerId: 0,
+    piperLengthScale: 0.96,
+    pitchShift: 1.18,
+    tempoMultiplier: 1.02,
+    sampleQuote: 'Maman, regarde ! Monsieur Martin avait l’air triste, est-ce qu’on peut lui donner nos petits gâteaux ?',
+    elevenLabsVoiceId: 'Domi'
   },
   martin: {
     speakerId: 'martin',
     displayName: 'M. Martin (Voisin d’immeuble)',
-    role: 'Voisin bienveillant et curieux',
+    role: 'Voix masculine chaleureuse de voisin (Modèle Neuronal Pierre Posé)',
     gender: 'male',
     toneDescription: 'Voix d’homme mûr du quartier, chaleureuse et sincère, touchée par la délicatesse de ses voisins',
-    pitchShift: 0.94,
-    tempoMultiplier: 1.0,
+    piperModel: 'fr_FR-upmc-medium.onnx',
+    piperSpeakerId: 1,
+    piperLengthScale: 1.04,
+    pitchShift: 0.95,
+    tempoMultiplier: 0.99,
     sampleQuote: 'Bonjour Amina, bonjour Tariq ! Merci pour votre gentillesse, ça fait chaud au cœur dans notre immeuble.',
     elevenLabsVoiceId: 'Clyde'
   }
 };
 
-async function fetchGoogleTTSChunk(text: string, lang: 'fr' | 'ar'): Promise<Buffer> {
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
-  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
-  if (!res.ok) {
-    throw new Error(`Google TTS error: HTTP ${res.status}`);
-  }
-  return Buffer.from(await res.arrayBuffer());
+function runPiperProcess(text: string, profile: CharacterVoiceConfig, outputWavPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const modelPath = path.join(PIPER_DIR, profile.piperModel);
+    if (!fs.existsSync(PIPER_BIN) || !fs.existsSync(modelPath)) {
+      reject(new Error(`Modèle vocal neuronal Piper introuvable dans ${PIPER_DIR}`));
+      return;
+    }
+
+    const args = [
+      '--model',
+      modelPath,
+      '--output_file',
+      outputWavPath,
+      '--length_scale',
+      String(profile.piperLengthScale || 1.0),
+      '--sentence_silence',
+      '0.28'
+    ];
+
+    if (typeof profile.piperSpeakerId === 'number') {
+      args.push('--speaker', String(profile.piperSpeakerId));
+    }
+
+    const child = spawn(PIPER_BIN, args, {
+      stdio: ['pipe', 'ignore', 'pipe']
+    });
+
+    let stderrData = '';
+    child.stderr.on('data', chunk => {
+      stderrData += chunk.toString();
+    });
+
+    child.on('error', err => reject(err));
+    child.on('close', code => {
+      if (code === 0 && fs.existsSync(outputWavPath)) {
+        resolve();
+      } else {
+        reject(new Error(`Piper TTS exited with code ${code}: ${stderrData}`));
+      }
+    });
+
+    // Normalize abbreviations like "M. Martin" -> "Monsieur Martin" for natural reading
+    const normalizedText = text.replace(/\bM\.\s+/g, 'Monsieur ').trim();
+    child.stdin.write(normalizedText + '\n');
+    child.stdin.end();
+  });
 }
 
-async function renderBilingualSegment(text: string, tempRawMp3Path: string): Promise<void> {
-  const tokens = splitTextIntoLinguisticTokens(text);
-  const chunkPaths: string[] = [];
+async function synthesizeCharacterSpeechToMp3(
+  rawText: string,
+  profile: CharacterVoiceConfig,
+  outMp3Path: string
+): Promise<{ applied: Array<{ original: string; phonetic: string }> }> {
+  const { phoneticText, applied } = formatPhoneticFrench(rawText);
+  const tempWavPath = path.join(OUTPUT_DIR, `piper_raw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.wav`);
 
-  for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    const chunkBuf = await fetchGoogleTTSChunk(t.text, t.lang);
-    const chunkPath = path.join(OUTPUT_DIR, `temp_chunk_${Date.now()}_${i}.mp3`);
-    fs.writeFileSync(chunkPath, chunkBuf);
-    chunkPaths.push(chunkPath);
-  }
+  await runPiperProcess(phoneticText, profile, tempWavPath);
 
-  if (chunkPaths.length === 1) {
-    fs.renameSync(chunkPaths[0], tempRawMp3Path);
-    return;
-  }
-
-  const concatList = chunkPaths.map(p => `file '${p.replace(/'/g, "'\\''")}'`).join('\n');
-  const concatPath = path.join(OUTPUT_DIR, `concat_${Date.now()}.txt`);
-  fs.writeFileSync(concatPath, concatList, 'utf-8');
+  const needsRubberband = Math.abs(profile.pitchShift - 1.0) > 0.015 || Math.abs(profile.tempoMultiplier - 1.0) > 0.015;
+  const audioFilter = needsRubberband
+    ? `rubberband=pitch=${profile.pitchShift}:tempo=${profile.tempoMultiplier},highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11`
+    : `highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11`;
 
   await execFileAsync('ffmpeg', [
     '-y',
-    '-f',
-    'concat',
-    '-safe',
-    '0',
     '-i',
-    concatPath,
-    '-c',
-    'copy',
-    tempRawMp3Path
+    tempWavPath,
+    '-af',
+    audioFilter,
+    '-ar',
+    '44100',
+    '-ac',
+    '2',
+    '-c:a',
+    'libmp3lame',
+    '-q:a',
+    '2',
+    outMp3Path
   ]);
 
-  for (const p of chunkPaths) {
-    try { fs.unlinkSync(p); } catch {}
-  }
-  try { fs.unlinkSync(concatPath); } catch {}
+  try {
+    fs.unlinkSync(tempWavPath);
+  } catch {}
+
+  return { applied };
 }
 
 export async function synthesizeSampleVoice(speakerId: SpeakerProfileId, customText?: string): Promise<string> {
@@ -158,24 +220,7 @@ export async function synthesizeSampleVoice(speakerId: SpeakerProfileId, customT
   const filename = `sample_${speakerId}_${Date.now()}.mp3`;
   const outPath = path.join(OUTPUT_DIR, filename);
 
-  const rawPath = path.join(OUTPUT_DIR, `sample_raw_${Date.now()}.mp3`);
-  await renderBilingualSegment(sampleText, rawPath);
-
-  // Apply character acoustic shaping via rubberband
-  await execFileAsync('ffmpeg', [
-    '-y',
-    '-i',
-    rawPath,
-    '-af',
-    `rubberband=pitch=${profile.pitchShift}:tempo=${profile.tempoMultiplier},volume=1.2`,
-    '-c:a',
-    'libmp3lame',
-    '-q:a',
-    '3',
-    outPath
-  ]);
-
-  try { fs.unlinkSync(rawPath); } catch {}
+  await synthesizeCharacterSpeechToMp3(sampleText, profile, outPath);
   return `/media/${filename}`;
 }
 
@@ -196,28 +241,9 @@ export async function generateEpisodeAudio(
     const speakerId = scene.speakerId || 'narrator';
     const profile = CHARACTER_VOICE_PROFILES[speakerId] || CHARACTER_VOICE_PROFILES.narrator;
 
-    const { applied } = formatPhoneticFrench(scene.spokenText);
-    applied.forEach(a => appliedPhoneticsList.push(a));
-
-    const rawPath = path.join(OUTPUT_DIR, `${episodeId}_scene_${scene.sceneNumber}_raw.mp3`);
     const shapedPath = path.join(OUTPUT_DIR, `${episodeId}_scene_${scene.sceneNumber}_shaped.mp3`);
-
-    await renderBilingualSegment(scene.spokenText, rawPath);
-
-    // Apply specific character pitch and cadence so each character has their unique human tone
-    await execFileAsync('ffmpeg', [
-      '-y',
-      '-i',
-      rawPath,
-      '-af',
-      `rubberband=pitch=${profile.pitchShift}:tempo=${profile.tempoMultiplier},volume=1.2`,
-      '-c:a',
-      'libmp3lame',
-      '-q:a',
-      '3',
-      shapedPath
-    ]);
-    try { fs.unlinkSync(rawPath); } catch {}
+    const { applied } = await synthesizeCharacterSpeechToMp3(scene.spokenText, profile, shapedPath);
+    applied.forEach(a => appliedPhoneticsList.push(a));
 
     // Measure exact scene audio duration
     const probe = await execFileAsync('ffprobe', [
@@ -232,7 +258,7 @@ export async function generateEpisodeAudio(
     const measuredDur = parseFloat(probe.stdout.trim()) || scene.durationSec;
     sceneAudioFiles.push({ path: shapedPath, durationSec: measuredDur });
 
-    // Build word timestamps
+    // Build word timestamps synchronized to actual neural speech duration
     const words = scene.spokenText.trim().split(/\s+/).filter(Boolean);
     const wordDur = words.length > 0 ? measuredDur / words.length : measuredDur;
 
@@ -281,26 +307,36 @@ export async function generateEpisodeAudio(
     '-f',
     'lavfi',
     '-i',
-    `anoisesrc=d=${Math.ceil(totalDurationSec) + 1}:c=pink:r=24000:a=0.018`,
+    `anoisesrc=d=${Math.ceil(totalDurationSec) + 1}:c=pink:r=44100:a=0.015`,
     '-filter_complex',
     `[1:a]${filterByAmbient[ambientTrack]}[amb];[0:a][amb]amix=inputs=2:duration=first:dropout_transition=2`,
+    '-ar',
+    '44100',
+    '-ac',
+    '2',
     '-c:a',
     'libmp3lame',
     '-q:a',
-    '3',
+    '2',
     outMp3Path
   ]);
 
   // Clean temp files
-  try { fs.unlinkSync(fullDialoguePath); } catch {}
-  try { fs.unlinkSync(concatPath); } catch {}
+  try {
+    fs.unlinkSync(fullDialoguePath);
+  } catch {}
+  try {
+    fs.unlinkSync(concatPath);
+  } catch {}
   for (const f of sceneAudioFiles) {
-    try { fs.unlinkSync(f.path); } catch {}
+    try {
+      fs.unlinkSync(f.path);
+    } catch {}
   }
 
   return {
-    voiceEngineUsed: 'Moteur Vocal Polyphonique Al Nour (Dialectique Arabe/Français Naturelle + Multi-Voix)',
-    voiceId: 'Distribution Complète : Tariq, Amina, Adam, Lina, Ibrahim, Khadija, M. Martin & Narrateur',
+    voiceEngineUsed: 'Piper-TTS ONNX Local (Modèles Neuronaux Français Hommes & Femmes : Tom, Pierre UPMC, Jessica UPMC, Siwis)',
+    voiceId: 'Casting Neuronal Complet : Ibrahim (Tom Grave), Tariq (Pierre), Amina (Jessica), Khadija (Siwis), Adam & Lina',
     ambientTrack,
     phoneticAdjustmentsApplied: appliedPhoneticsList,
     audioFileUrl: `/media/${outMp3Name}`,
