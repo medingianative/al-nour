@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studio Al Nour (النور) — Orchestrateur Agentique & Studio Virtuel 2D</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #161412;
+      color: #F5EFE6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .gold-border { border-color: rgba(244, 196, 80, 0.35); }
+    .gold-glow { box-shadow: 0 0 25px rgba(244, 196, 80, 0.12); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1E1B18; }
+    ::-webkit-scrollbar-thumb { background: #4A4036; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="border-b border-[#2E2924] bg-[#1E1B18] px-5 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F4C44E] to-[#C86D51] flex items-center justify-center text-[#161412] font-bold text-lg shadow">
+        ن
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-wide text-[#FAF5ED] flex items-center gap-2">
+          STUDIO AL NOUR
+          <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-[#2B3E54] text-[#9EC5D6] border border-[#3E5875]">
+            Harnais Zéro-Bruit • 6 Portes • 0,00 €
+          </span>
+        </h1>
+        <p class="text-xs text-[#A89C8E]">
+          Famille & Immeuble HLM • Validation Humaine Obligatoire & Autocritique entre chaque agent
+        </p>
+      </div>
+    </div>
+
+    <!-- New Episode Prompt Launcher -->
+    <div class="flex items-center gap-2 flex-1 max-w-2xl">
+      <input
+        id="topicInput"
+        type="text"
+        placeholder="Ex: En rentrant de sa garde d'infirmière, Amina croise M. Martin dans le hall du HLM..."
+        class="flex-1 bg-[#141210] border border-[#38312A] rounded-lg px-3 py-1.5 text-xs text-[#FAF5ED] focus:outline-none focus:border-[#F4C44E]"
+      />
+      <button
+        onclick="createNewEpisode()"
+        id="btnNewEpisode"
+        class="px-3.5 py-1.5 rounded-lg bg-[#F4C44E] hover:bg-[#E2B03B] text-[#161412] font-semibold text-xs transition whitespace-nowrap shadow"
+      >
+        🎬 Lancer un Épisode
+      </button>
+    </div>
+  </header>
+
+  <!-- 6 Validation Gates Stepper Bar -->
+  <div class="bg-[#1A1715] border-b border-[#2E2924] px-5 py-2.5 flex items-center justify-between gap-2 overflow-x-auto">
+    <div class="flex items-center gap-1.5 text-xs" id="gateStepper"></div>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="text-[#A89C8E]">Épisodes :</span>
+      <select
+        id="episodeSelect"
+        onchange="selectEpisode(this.value)"
+        class="bg-[#25211D] border border-[#38312A] rounded px-2 py-1 text-xs text-[#FAF5ED]"
+      ></select>
+    </div>
+  </div>
+
+  <!-- Main Workspace Grid -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 max-w-[1600px] w-full mx-auto">
+    <!-- Left Column (7 cols): 2D Virtual Studio Canvas + Live Multimedia Preview -->
+    <div class="lg:col-span-7 flex flex-col gap-4">
+      <!-- 2D Virtual Studio Card -->
+      <div class="bg-[#1E1B18] border border-[#2E2924] rounded-2xl p-3.5 gold-glow">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-sm font-bold text-[#FAF5ED] flex items-center gap-2">
+              🏢 Studio Virtuel 2D — Les 6 Postes de Travail d’Al Nour
+            </h2>
+            <p class="text-xs text-[#A89C8E]" id="studioStatusBanner">
+              Chaque agent s'arrête après son autocritique et attend ta validation pour transmettre le dossier doré.
+            </p>
+          </div>
+          <span id="activeGateBadge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#2E2924] text-[#F4C44E]">
+            Porte 1/6
+          </span>
+        </div>
+
+        <canvas
+          id="virtualStudioCanvas"
+          width="860"
+          height="430"
+          class="w-full rounded-xl border border-[#332C25] bg-[#141210] block"
+        ></canvas>
+      </div>
+
+      <!-- Bottom Left: Visual Storyboard 9:16 Gallery & Video Player -->
+      <div class="bg-[#1E1B18] border border-[#2E2924] rounded-2xl p-4 flex-1">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-[#FAF5ED]">
+            🎞️ Production Multimédia 9:16 (Plans du Bâtiment HLM, Famille, Audio & Master MP4)
+          </h3>
+          <span class="text-xs text-[#A89C8E]">Format 1080×1920 • Sans Visage • 0,00 €</span>
+        </div>
+        <div id="mediaShowcase" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- Right Column (5 cols): Tabs for Telegram Control, HLM Residents, Harness & Memory -->
+    <div class="lg:col-span-5 flex flex-col bg-[#1E1B18] border border-[#2E2924] rounded-2xl overflow-hidden">
+      <!-- Tab Headers -->
+      <div class="grid grid-cols-3 border-b border-[#2E2924] bg-[#161412] text-xs font-semibold">
+        <button
+          onclick="switchRightTab('telegram')"
+          id="tab-btn-telegram"
+          class="py-3 px-2 border-b-2 border-[#F4C44E] text-[#F4C44E] bg-[#1E1B18] transition"
+        >
+          📱 Contrôle Telegram & Autocritique
+        </button>
+        <button
+          onclick="switchRightTab('residents')"
+          id="tab-btn-residents"
+          class="py-3 px-2 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition"
+        >
+          🏢 Habitants HLM (Évolutif)
+        </button>
+        <button
+          onclick="switchRightTab('harness')"
+          id="tab-btn-harness"
+          class="py-3 px-2 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition"
+        >
+          🧠 Harnais, Modèles & Mémoire
+        </button>
+      </div>
+
+      <!-- Tab 1: Telegram Control & Self-Critique Gate Inspector -->
+      <div id="tab-telegram" class="p-4 flex-1 flex flex-col justify-between space-y-4 overflow-y-auto">
+        <div class="space-y-3">
+          <div class="flex items-center justify-between text-xs bg-[#141210] px-3 py-2 rounded-lg border border-[#2E2924]">
+            <span class="text-[#A89C8E]">Synchronisation Bot Telegram :</span>
+            <span id="tgBotStatus" class="font-medium text-[#70C18C]">Simulé en direct + Prêt pour Token BotFather</span>
+          </div>
+
+          <!-- Active Deliverable + Self-Critique Card -->
+          <div id="telegramCardContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- User Critique / Revision Input Box (Teaches Agent Memory!) -->
+        <div class="pt-3 border-t border-[#2E2924] space-y-2">
+          <label class="block text-xs font-semibold text-[#F4C44E]">
+            ✍️ Donner une consigne / critique à l’agent actif (met à jour sa mémoire) :
+          </label>
+          <div class="flex gap-2">
+            <input
+              id="revisionInput"
+              type="text"
+              placeholder="Ex: Insiste davantage sur la rencontre dans le hall du HLM avec M. Martin..."
+              class="flex-1 bg-[#141210] border border-[#38312A] rounded-lg px-3 py-2 text-xs text-[#FAF5ED] focus:outline-none focus:border-[#F4C44E]"
+            />
+            <button
+              onclick="submitRevision()"
+              class="px-3 py-2 rounded-lg bg-[#C86D51] hover:bg-[#B3583D] text-white font-semibold text-xs transition whitespace-nowrap"
+            >
+              Envoyer & Corriger
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: HLM Building Residents Manager -->
+      <div id="tab-residents" class="hidden p-4 flex-1 space-y-4 overflow-y-auto">
+        <div>
+          <h3 class="text-sm font-bold text-[#FAF5ED] mb-1">
+            🏢 Registre des Habitants du Bâtiment HLM (« Résidence Les Cèdres »)
+          </h3>
+          <p class="text-xs text-[#A89C8E]">
+            Zéro cliché : Tariq (Ingénieur, sans barbe), Amina (Infirmière, voilée sobrement), Ibrahim (Ancien Avocat, sans barbe). Ajoute facilement de nouveaux voisins de toutes cultures et religions.
+          </p>
+        </div>
+
+        <div id="residentsList" class="space-y-2.5"></div>
+
+        <!-- Add New Neighbor Form -->
+        <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] space-y-2.5 text-xs">
+          <h4 class="font-bold text-[#F4C44E]">➕ Ajouter un nouveau voisin dans le bâtiment HLM</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <input id="newResName" placeholder="Prénom / Nom (ex: Mme Cohen, David, Mei...)" class="bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
+            <input id="newResApt" placeholder="Appartement (ex: Appt 4C)" class="bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
+            <input id="newResProf" placeholder="Métier (ex: Pédiatre, Boulanger, Musicien)" class="bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
+            <input id="newResBg" placeholder="Culture / Religion (ex: Chrétien, Juif, Athée, Converti...)" class="bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
+          </div>
+          <input id="newResOutfit" placeholder="Description tenue civile sobre (ex: Pull col roulé bleu marine et manteau beige)" class="w-full bg-[#1E1B18] border border-[#38312A] rounded px-2.5 py-1.5 text-[#FAF5ED]" />
+          <button onclick="addNewResident()" class="w-full py-1.5 rounded bg-[#4E6741] hover:bg-[#5E7B4F] text-white font-semibold transition">
+            Enregistrer ce nouveau voisin dans la Bible de l'Immeuble
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Agent Harness, Model Routing & Learned Memory -->
+      <div id="tab-harness" class="hidden p-4 flex-1 space-y-4 overflow-y-auto text-xs">
+        <div>
+          <h3 class="text-sm font-bold text-[#FAF5ED] mb-1">
+            ⚙️ Routage des Modèles par Agent (Optimisation Tokens & Coût 0 €)
+          </h3>
+          <p class="text-[#A89C8E]">
+            Chaque agent ne reçoit qu'un Context Packet JSON isolé (zéro bruit) et utilise le modèle adapté à son besoin de réflexion.
+          </p>
+        </div>
+
+        <div id="agentModelsList" class="space-y-2.5"></div>
+
+        <div class="pt-3 border-t border-[#2E2924]">
+          <h4 class="font-bold text-[#F4C44E] mb-2">🧠 Règles Apprises par les Agents (Mémoire Persistante SQLite)</h4>
+          <div id="learnedRulesList" class="space-y-1.5"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const GATES = [
+      { id: '1_idea', label: '1. Idée & Casting HLM', agent: 'director' },
+      { id: '2_research', label: '2. Sources & Éthique', agent: 'researcher' },
+      { id: '3_script', label: '3. Script & Hook 50s', agent: 'scriptwriter' },
+      { id: '4a_prompts', label: '4a. Storyboard 2D', agent: 'illustrator' },
+      { id: '4b_visuals', label: '4b. Images 9:16', agent: 'illustrator' },
+      { id: '5_audio', label: '5. Voix & Phonétique', agent: 'sound_engineer' },
+      { id: '6_video', label: '6. Montage MP4', agent: 'video_editor' }
+    ];
+
+    const STUDIO_DESKS = [
+      { id: 'director', name: 'Youssef', role: '1. Directeur Studio', x: 145, y: 125, color: '#4E6741', skin: '#E2B191', hair: '#2D221B', hijab: false },
+      { id: 'researcher', name: 'Salma', role: '2. Chercheuse Éthique', x: 430, y: 125, color: '#C86D51', skin: '#E9BC9E', hair: '#2D221B', hijab: true },
+      { id: 'scriptwriter', name: 'Karim', role: '3. Scénariste TikTok', x: 715, y: 125, color: '#2B3E54', skin: '#E7B99A', hair: '#33251D', hijab: false },
+      { id: 'illustrator', name: 'Leïla', role: '4. Illustratrice 2D', x: 145, y: 315, color: '#E2A857', skin: '#EBBFA2', hair: '#33251D', hijab: true },
+      { id: 'sound_engineer', name: 'Bilal', role: '5. Ingénieur Son', x: 430, y: 315, color: '#6E5D50', skin: '#DDA988', hair: '#2D221B', hijab: false },
+      { id: 'video_editor', name: 'Nadia', role: '6. Monteuse 9:16', x: 715, y: 315, color: '#9B8EA9', skin: '#E5B698', hair: '#2D221B', hijab: true }
+    ];
+
+    let appState = {
+      episodes: [],
+      activeEpisode: null,
+      telegramPreview: null,
+      residents: [],
+      agentModels: [],
+      learnedRules: [],
+      isBusy: false,
+      animTime: 0,
+      folderPos: { x: 145, y: 125, targetX: 145, targetY: 125 }
+    };
+
+    async function fetchStudioState() {
+      const res = await fetch('/api/state');
+      const data = await res.json();
+      appState.episodes = data.episodes || [];
+      appState.activeEpisode = data.activeEpisode;
+      appState.telegramPreview = data.telegramPreview;
+      appState.residents = data.residents || [];
+      appState.agentModels = data.agentModels || [];
+      appState.learnedRules = data.learnedRules || [];
+
+      if (data.telegramBotActive) {
+        document.getElementById('tgBotStatus').textContent = '🟢 Connecté en direct à Telegram';
+      }
+
+      updateFolderTargetFromEpisode();
+      renderAllUI();
+    }
+
+    function updateFolderTargetFromEpisode() {
+      const ep = appState.activeEpisode;
+      if (!ep) return;
+      const activeAgentId = ep.activeAgent || 'video_editor';
+      const desk = STUDIO_DESKS.find(d => d.id === activeAgentId);
+      if (desk) {
+        appState.folderPos.targetX = desk.x;
+        appState.folderPos.targetY = desk.y;
+      }
+    }
+
+    function renderAllUI() {
+      renderStepper();
+      renderEpisodeSelector();
+      renderTelegramCard();
+      renderMediaShowcase();
+      renderResidentsTab();
+      renderHarnessTab();
+    }
+
+    function renderStepper() {
+      const container = document.getElementById('gateStepper');
+      const ep = appState.activeEpisode;
+      const currentGate = ep ? ep.currentGate : '1_idea';
+      const currentIdx = GATES.findIndex(g => g.id === currentGate);
+
+      container.innerHTML = GATES.map((g, idx) => {
+        const isDone = currentGate === 'completed' || (currentIdx > idx);
+        const isCurrent = currentGate === g.id;
+        const cls = isCurrent
+          ? 'bg-[#F4C44E] text-[#161412] font-bold shadow'
+          : isDone
+          ? 'bg-[#2A3B28] text-[#8CD99E] border border-[#3E593B]'
+          : 'bg-[#25211D] text-[#8C8073]';
+        return `
+          <div class="px-2.5 py-1 rounded-md whitespace-nowrap flex items-center gap-1 ${cls}">
+            <span>${isDone ? '✓' : isCurrent ? '●' : '○'}</span>
+            <span>${g.label}</span>
+          </div>
+        `;
+      }).join('<span class="text-[#4A4036]">→</span>');
+
+      document.getElementById('activeGateBadge').textContent =
+        currentGate === 'completed'
+          ? '🎉 Épisode Terminé'
+          : `Porte active : ${currentGate} (Attente validation)`;
+    }
+
+    function renderEpisodeSelector() {
+      const sel = document.getElementById('episodeSelect');
+      if (!appState.episodes.length) {
+        sel.innerHTML = '<option value="">Aucun épisode</option>';
+        return;
+      }
+      sel.innerHTML = appState.episodes
+        .map(
+          ep =>
+            `<option value="${ep.id}" ${
+              appState.activeEpisode && appState.activeEpisode.id === ep.id ? 'selected' : ''
+            }>${ep.topicPrompt.slice(0, 48)} (${ep.currentGate})</option>`
+        )
+        .join('');
+    }
+
+    function renderTelegramCard() {
+      const container = document.getElementById('telegramCardContainer');
+      const ep = appState.activeEpisode;
+      const preview = appState.telegramPreview;
+
+      if (!ep || !preview) {
+        container.innerHTML = `
+          <div class="p-6 text-center text-xs text-[#A89C8E] bg-[#141210] rounded-xl border border-[#2E2924]">
+            Aucun épisode actif. Clique sur <b>« 🎬 Lancer un Épisode »</b> en haut pour démarrer !
+          </div>
+        `;
+        return;
+      }
+
+      // Format Markdown-like text cleanly
+      const htmlText = preview.text
+        .replace(/\*([^*]+)\*/g, '<strong class="text-[#FAF5ED]">$1</strong>')
+        .replace(/_([^_]+)_/g, '<em class="text-[#D5C7B8]">$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[#25211D] text-[#F4C44E] font-mono text-[11px]">$1</code>')
+        .replace(/\n/g, '<br/>');
+
+      const buttonsHtml = preview.buttons
+        .map(
+          row => `
+          <div class="flex flex-wrap gap-2">
+            ${row
+              .map(
+                btn => `
+                <button
+                  onclick="handleTelegramAction('${btn.action}')"
+                  ${appState.isBusy ? 'disabled' : ''}
+                  class="flex-1 py-2 px-3 rounded-lg font-semibold text-xs transition ${
+                    btn.action.startsWith('approve:')
+                      ? 'bg-[#4E6741] hover:bg-[#5E7B4F] text-white shadow'
+                      : btn.action.startsWith('alt:')
+                      ? 'bg-[#2B3E54] hover:bg-[#38506B] text-[#FAF5ED] border border-[#456282]'
+                      : 'bg-[#25211D] hover:bg-[#332D27] text-[#E2A857] border border-[#3E352D]'
+                  }"
+                >
+                  ${appState.isBusy ? '⏳ Traitement en cours...' : btn.label}
+                </button>
+              `
+              )
+              .join('')}
+          </div>
+        `
+        )
+        .join('');
+
+      container.innerHTML = `
+        <div class="bg-[#141210] border border-[#38312A] rounded-xl p-4 space-y-3 text-xs leading-relaxed">
+          <div class="flex items-center justify-between border-b border-[#25211D] pb-2">
+            <span class="font-bold text-[#F4C44E]">📨 Message du Bot Telegram Al Nour</span>
+            <span class="text-[11px] font-mono text-[#8C8073]">ID: ${ep.id}</span>
+          </div>
+          <div class="text-[#D8CFC4]">${htmlText}</div>
+          <div class="pt-2 space-y-2">${buttonsHtml}</div>
+        </div>
+      `;
+    }
+
+    function renderMediaShowcase() {
+      const container = document.getElementById('mediaShowcase');
+      const ep = appState.activeEpisode;
+      if (!ep) {
+        container.innerHTML = '<p class="text-xs text-[#8C8073]">Lance un épisode pour visualiser les livrables multimédias.</p>';
+        return;
+      }
+
+      let html = '';
+
+      // 1. Final MP4 Video Player if Gate 6 reached
+      if (ep.steps.video && ep.steps.video.deliverable.videoFileUrl) {
+        const v = ep.steps.video.deliverable;
+        html += `
+          <div class="p-3.5 rounded-xl bg-[#141210] border-2 border-[#F4C44E] flex flex-col sm:flex-row items-center gap-4">
+            <video
+              src="${v.videoFileUrl}"
+              controls
+              playsinline
+              class="w-44 h-78 rounded-lg border border-[#38312A] bg-black shadow-lg"
+            ></video>
+            <div class="flex-1 space-y-2 text-xs">
+              <div class="inline-block px-2 py-0.5 rounded bg-[#F4C44E] text-[#161412] font-bold">
+                🎬 MASTER FINAL TIKTOK 9:16 PRÊT
+              </div>
+              <p class="text-sm font-bold text-[#FAF5ED]">${ep.steps.idea?.deliverable.title || ep.topicPrompt}</p>
+              <p class="text-[#A89C8E]">Format : ${v.resolution} • Durée : ${v.durationSec}s • Taille : ${v.fileSizeMb} Mo</p>
+              <p class="text-[#A89C8E]">Sous-titres : ${v.subtitleStyle}</p>
+              <div class="pt-2 flex flex-wrap gap-2">
+                <a
+                  href="${v.videoFileUrl}"
+                  download="al_nour_${ep.id}.mp4"
+                  class="px-3 py-1.5 rounded-lg bg-[#4E6741] hover:bg-[#5E7B4F] text-white font-semibold inline-block"
+                >
+                  ⬇️ Télécharger la vidéo MP4 (9:16)
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Audio Player if Gate 5 reached
+      if (ep.steps.audio && ep.steps.audio.deliverable.audioFileUrl) {
+        const a = ep.steps.audio.deliverable;
+        html += `
+          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div>
+              <span class="font-bold text-[#F4C44E] block">🎙️ Piste Audio & Ambiance Halal (${a.durationSec}s)</span>
+              <span class="text-[#A89C8E]">${a.voiceEngineUsed} • Voix: ${a.voiceId} • Ambiance: ${a.ambientTrack}</span>
+            </div>
+            <audio src="${a.audioFileUrl}" controls class="h-8"></audio>
+          </div>
+        `;
+      }
+
+      // 3. Visual Storyboard 9:16 Gallery (Gate 4b or 4a)
+      const visualStep = ep.steps.visuals || ep.steps.prompts;
+      if (visualStep && visualStep.deliverable.scenes) {
+        const scenes = visualStep.deliverable.scenes;
+        html += `
+          <div>
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-bold text-[#FAF5ED]">🖼️ Storyboard & Illustrations 9:16 (${scenes.length} plans — Immeuble HLM & Famille)</span>
+              <span class="text-[#A89C8E]">Clique sur 🔄 pour régénérer un plan</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              ${scenes
+                .map(
+                  sc => `
+                <div class="bg-[#141210] border border-[#2E2924] rounded-xl p-2 flex flex-col justify-between text-[11px]">
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="font-bold text-[#F4C44E]">Plan ${sc.sceneNumber} (${sc.durationSec}s)</span>
+                      <span class="px-1.5 py-0.5 rounded bg-[#25211D] text-[#9EC5D6] font-mono text-[10px]">${sc.locationId}</span>
+                    </div>
+                    ${
+                      sc.imageUrl
+                        ? `<img src="${sc.imageUrl}" alt="Plan ${sc.sceneNumber}" class="w-full aspect-[9/16] object-cover rounded-lg border border-[#332C25] mb-1.5" />`
+                        : `<div class="w-full aspect-[9/16] rounded-lg border border-dashed border-[#38312A] flex items-center justify-center text-[#8C8073] p-2 text-center mb-1.5">En attente validation Porte 4a</div>`
+                    }
+                    <p class="text-[#D8CFC4] line-clamp-2 mb-1">"${sc.subtitleText}"</p>
+                  </div>
+                  <div class="pt-1 border-t border-[#25211D] flex items-center justify-between text-[10px] text-[#A89C8E]">
+                    <span>👥 ${sc.residentIds.length ? sc.residentIds.join(', ') : 'POV'}</span>
+                    ${
+                      sc.imageUrl
+                        ? `<button onclick="regenScene(${sc.sceneNumber})" class="text-[#F4C44E] hover:underline">🔄</button>`
+                        : ''
+                    }
+                  </div>
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+          </div>
+        `;
+      } else if (ep.steps.script) {
+        html += `
+          <div class="p-3 rounded-xl bg-[#141210] border border-[#2E2924] text-xs space-y-1.5">
+            <span class="font-bold text-[#F4C44E]">📜 Script complet (${ep.steps.script.deliverable.totalEstimatedDurationSec}s) :</span>
+            <p class="text-[#D8CFC4] italic leading-relaxed">« ${ep.steps.script.deliverable.fullNarrationText} »</p>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="p-4 rounded-xl bg-[#141210] border border-[#2E2924] text-xs text-[#A89C8E]">
+            Valide les portes sur la droite pour voir apparaître progressivement le script, les 8 illustrations 9:16 du bâtiment HLM, la piste audio et la vidéo MP4 finale !
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function renderResidentsTab() {
+      const container = document.getElementById('residentsList');
+      container.innerHTML = appState.residents
+        .map(
+          r => `
+        <div class="p-2.5 rounded-xl bg-[#141210] border border-[#2E2924] flex items-start gap-3 text-xs">
+          <div class="w-7 h-7 rounded-full flex-shrink-0 border border-white/20 mt-0.5" style="background:${r.visual.top}"></div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-[#FAF5ED]">${r.name} (${r.age} ans) — <span class="text-[#F4C44E]">${r.profession}</span></span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#25211D] text-[#A89C8E]">${r.apartment}</span>
+            </div>
+            <p class="text-[#A89C8E] mt-0.5">${r.culturalOrSpiritualBackground}</p>
+            <p class="text-[#8C8073] text-[11px] mt-0.5">👔 Tenue : ${r.outfitDescription}</p>
+          </div>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    function renderHarnessTab() {
+      const modelsContainer = document.getElementById('agentModelsList');
+      modelsContainer.innerHTML = appState.agentModels
+        .map(
+          m => `
+        <div class="p-2.5 rounded-xl bg-[#141210] border border-[#2E2924] space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[#FAF5ED]">${m.agentName}</span>
+            <span class="px-2 py-0.5 rounded bg-[#25211D] text-[#F4C44E] font-mono text-[10px]">${m.modelId}</span>
+          </div>
+          <p class="text-[11px] text-[#A89C8E]">${m.rationale}</p>
+        </div>
+      `
+        )
+        .join('');
+
+      const rulesContainer = document.getElementById('learnedRulesList');
+      rulesContainer.innerHTML = appState.learnedRules
+        .map(
+          r => `
+        <div class="p-2 rounded-lg bg-[#141210] border border-[#2E2924] flex items-start gap-2 text-[11px]">
+          <span class="px-1.5 py-0.5 rounded bg-[#2B3E54] text-[#9EC5D6] font-mono uppercase">${r.agentId}</span>
+          <span class="text-[#D8CFC4]">${r.ruleText}</span>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    async function createNewEpisode() {
+      const input = document.getElementById('topicInput');
+      const topicPrompt =
+        input.value.trim() ||
+        "En rentrant de sa garde d'infirmière, Amina croise M. Martin dans le hall du bâtiment HLM";
+      appState.isBusy = true;
+      renderTelegramCard();
+      await fetch('/api/episodes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topicPrompt })
+      });
+      input.value = '';
+      appState.isBusy = false;
+      await fetchStudioState();
+    }
+
+    async function handleTelegramAction(actionStr) {
+      const [action, epId, param] = actionStr.split(':');
+      if (!epId || appState.isBusy) return;
+      appState.isBusy = true;
+      renderTelegramCard();
+
+      if (action === 'approve') {
+        await fetch('/api/episodes/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ episodeId: epId })
+        });
+      } else if (action === 'alt') {
+        const ep = appState.activeEpisode;
+        const step =
+          ep.steps[
+            ep.currentGate === '1_idea'
+              ? 'idea'
+              : ep.currentGate === '2_research'
+              ? 'research'
+              : ep.currentGate === '3_script'
+              ? 'script'
+              : ep.currentGate === '4a_prompts'
+              ? 'prompts'
+              : ep.currentGate === '4b_visuals'
+              ? 'visuals'
+              : 'audio'
+          ];
+        const feedbackText = step?.selfCritique?.suggestedAlternative || 'Appliquer la variante proposée';
+        await fetch('/api/episodes/revise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ episodeId: epId, feedbackText })
+        });
+      } else if (action === 'regen') {
+        await fetch('/api/episodes/revise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ episodeId: epId, feedbackText: 'Propose un nouvel angle frais et sincère' })
+        });
+      } else if (action === 'scene_regen') {
+        await fetch('/api/episodes/scene-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ episodeId: epId, sceneNumber: Number(param), mode: 'regen' })
+        });
+      } else if (action === 'scene_flux') {
+        await fetch('/api/episodes/scene-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ episodeId: epId, sceneNumber: Number(param), mode: 'flux' })
+        });
+      }
+
+      appState.isBusy = false;
+      await fetchStudioState();
+    }
+
+    async function regenScene(sceneNum) {
+      if (!appState.activeEpisode) return;
+      await handleTelegramAction(`scene_regen:${appState.activeEpisode.id}:${sceneNum}`);
+    }
+
+    async function submitRevision() {
+      const input = document.getElementById('revisionInput');
+      const text = input.value.trim();
+      if (!text || !appState.activeEpisode) return;
+      appState.isBusy = true;
+      renderTelegramCard();
+      await fetch('/api/episodes/revise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episodeId: appState.activeEpisode.id, feedbackText: text })
+      });
+      input.value = '';
+      appState.isBusy = false;
+      await fetchStudioState();
+    }
+
+    async function addNewResident() {
+      const name = document.getElementById('newResName').value.trim();
+      if (!name) return;
+      await fetch('/api/residents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          apartment: document.getElementById('newResApt').value.trim() || 'Appt 4B',
+          profession: document.getElementById('newResProf').value.trim() || 'Voisin du HLM',
+          culturalOrSpiritualBackground:
+            document.getElementById('newResBg').value.trim() || 'Diversité culturelle de la résidence HLM',
+          outfitDescription:
+            document.getElementById('newResOutfit').value.trim() || 'Tenue civile occidentale sobre'
+        })
+      });
+      document.getElementById('newResName').value = '';
+      await fetchStudioState();
+    }
+
+    function selectEpisode(epId) {
+      const found = appState.episodes.find(e => e.id === epId);
+      if (found) {
+        appState.activeEpisode = found;
+        fetchStudioState();
+      }
+    }
+
+    function switchRightTab(tab) {
+      ['telegram', 'residents', 'harness'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        document.getElementById(`tab-btn-${t}`).className =
+          t === tab
+            ? 'py-3 px-2 border-b-2 border-[#F4C44E] text-[#F4C44E] bg-[#1E1B18] transition'
+            : 'py-3 px-2 border-b-2 border-transparent text-[#A89C8E] hover:text-[#FAF5ED] transition';
+      });
+    }
+
+    // --- 2D VIRTUAL STUDIO CANVAS RENDERER ---
+    function drawVirtualStudio(ts) {
+      const t = ts / 1000;
+      const canvas = document.getElementById('virtualStudioCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Studio Warm Floor & Grid
+      ctx.fillStyle = '#181512';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = 'rgba(244, 196, 80, 0.06)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      // Draw Pipeline Path connecting the 6 desks
+      ctx.strokeStyle = 'rgba(244, 196, 80, 0.22)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      STUDIO_DESKS.forEach((d, i) => {
+        if (i === 0) ctx.moveTo(d.x, d.y);
+        else ctx.lineTo(d.x, d.y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const ep = appState.activeEpisode;
+      const activeAgentId = ep ? ep.activeAgent : null;
+
+      // Draw Each of the 6 Agent Workstations
+      STUDIO_DESKS.forEach((desk, idx) => {
+        const isActive = activeAgentId === desk.id;
+        const bob = isActive ? Math.sin(t * 4) * 3 : Math.sin(t * 1.8 + idx) * 1.2;
+
+        ctx.save();
+        ctx.translate(desk.x, desk.y);
+
+        // Active Golden Halo under workstation
+        if (isActive) {
+          const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 95);
+          glow.addColorStop(0, 'rgba(244, 196, 80, 0.32)');
+          glow.addColorStop(1, 'rgba(244, 196, 80, 0)');
+          ctx.fillStyle = glow;
+          ctx.beginPath(); ctx.arc(0, 0, 95, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Desk Shadow & Wooden Table
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath(); ctx.roundRect(-68, 12, 136, 44, 10); ctx.fill();
+
+        ctx.fillStyle = isActive ? '#3A3026' : '#26211C';
+        ctx.strokeStyle = isActive ? '#F4C44E' : '#3E362E';
+        ctx.lineWidth = isActive ? 2.5 : 1.5;
+        ctx.beginPath(); ctx.roundRect(-65, 8, 130, 42, 10); ctx.fill(); ctx.stroke();
+
+        // Faceless Agent Avatar behind desk
+        ctx.fillStyle = desk.color;
+        ctx.beginPath();
+        ctx.roundRect(-22, -24 + bob, 44, 36, [12, 12, 4, 4]);
+        ctx.fill();
+
+        if (desk.hijab) {
+          ctx.fillStyle = desk.color;
+          ctx.beginPath(); ctx.arc(0, -38 + bob, 16, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Faceless Head
+        ctx.fillStyle = desk.skin;
+        ctx.beginPath(); ctx.ellipse(0, -38 + bob, 12, 15, 0, 0, Math.PI * 2); ctx.fill();
+
+        if (!desk.hijab) {
+          ctx.fillStyle = desk.hair;
+          ctx.beginPath(); ctx.arc(0, -42 + bob, 12.5, Math.PI, Math.PI * 2); ctx.fill();
+        }
+
+        // Laptop / Monitor on desk
+        ctx.fillStyle = isActive ? '#F4C44E' : '#4A433C';
+        ctx.beginPath(); ctx.roundRect(-18, 14, 36, 20, 4); ctx.fill();
+
+        // Role Label
+        ctx.fillStyle = isActive ? '#F4C44E' : '#FAF5ED';
+        ctx.font = 'bold 11.5px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(desk.role, 0, 66);
+
+        // Status Bubble above active agent
+        if (isActive) {
+          const statusText = appState.isBusy
+            ? '⚙️ Réflexion + Autocritique...'
+            : '✋ Autocritique prête • Attente validation';
+          ctx.fillStyle = '#141210';
+          ctx.strokeStyle = '#F4C44E';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.roundRect(-98, -82, 196, 22, 11); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#F4C44E';
+          ctx.font = 'bold 10px system-ui, sans-serif';
+          ctx.fillText(statusText, 0, -67);
+        }
+
+        ctx.restore();
+      });
+
+      // Smoothly animate the Golden Folder ("Dossier Al Nour") between desks
+      appState.folderPos.x += (appState.folderPos.targetX - appState.folderPos.x) * 0.08;
+      appState.folderPos.y += (appState.folderPos.targetY - appState.folderPos.y) * 0.08;
+
+      ctx.save();
+      ctx.translate(appState.folderPos.x + 38, appState.folderPos.y + 18);
+      ctx.fillStyle = '#F4C44E';
+      ctx.beginPath(); ctx.roundRect(-12, -9, 24, 18, 3); ctx.fill();
+      ctx.fillStyle = '#161412';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ن', 0, 3);
+      ctx.restore();
+
+      requestAnimationFrame(drawVirtualStudio);
+    }
+
+    // Connect SSE for live updates from Telegram or Orchestrator
+    const evtSource = new EventSource('/api/events');
+    evtSource.onmessage = event => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.episode) {
+          document.getElementById('studioStatusBanner').textContent = data.message || '';
+          fetchStudioState();
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    fetchStudioState();
+    requestAnimationFrame(drawVirtualStudio);
+  </script>
+</body>
+</html>
