@@ -299,13 +299,14 @@ export function startTelegramBotIfConfigured(): { active: boolean; botUsername?:
       const speakerId = data.replace('sample_voice:', '') as any;
       await ctx.answerCallbackQuery('Génération de l’échantillon vocal...');
       const { synthesizeSampleVoice, CHARACTER_VOICE_PROFILES } = await import('../media/audio-engine.js');
-      const audioUrl = await synthesizeSampleVoice(speakerId);
-      const rel = audioUrl.replace(/^\/media\//, '');
-      const diskPath = path.resolve(process.cwd(), 'public', 'media', rel);
+      const { audioUrl, engine } = await synthesizeSampleVoice(speakerId);
+      const diskPath = audioUrl.startsWith('/samples/')
+        ? path.resolve(process.cwd(), 'public', audioUrl.replace(/^\//, ''))
+        : path.resolve(process.cwd(), 'public', 'media', audioUrl.replace(/^\/media\//, ''));
       const profile = CHARACTER_VOICE_PROFILES[speakerId] || CHARACTER_VOICE_PROFILES.narrator;
       if (fs.existsSync(diskPath) && ctx.chat) {
         await bot.api.sendVoice(ctx.chat.id, new InputFile(diskPath), {
-          caption: `🎙️ *Échantillon Vocal — ${profile.displayName}*\n« _${profile.sampleQuote}_ »\n\n*Timbre* : ${profile.toneDescription}`,
+          caption: `🎙️ *Échantillon Vocal — ${profile.displayName}*\n« _${profile.sampleQuote}_ »\n\n*Moteur* : ${engine}\n*Timbre* : ${profile.toneDescription}`,
           parse_mode: 'Markdown'
         });
       }

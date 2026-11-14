@@ -773,7 +773,11 @@
       if (btn) btn.textContent = '▶️ Réécouter';
       const target = document.getElementById(`audio-container-${speakerId}`);
       if (target && data.audioUrl) {
-        target.innerHTML = `<audio src="${data.audioUrl}" autoplay controls class="h-8"></audio>`;
+        target.innerHTML = `
+          <div class="flex items-center gap-2">
+            <audio src="${data.audioUrl}?t=${Date.now()}" autoplay controls class="h-8"></audio>
+            <span class="text-[10px] text-[#F4C44E] font-semibold">${data.engine || 'Gemini 3.8 Flash TTS'}</span>
+          </div>`;
       }
     }
 
@@ -788,7 +792,11 @@
       const data = await res.json();
       const target = document.getElementById('customVoiceAudioContainer');
       if (target && data.audioUrl) {
-        target.innerHTML = `<audio src="${data.audioUrl}" autoplay controls class="w-full h-8 mt-1"></audio>`;
+        target.innerHTML = `
+          <div class="space-y-1">
+            <audio src="${data.audioUrl}?t=${Date.now()}" autoplay controls class="w-full h-8 mt-1"></audio>
+            <div class="text-[10px] text-[#F4C44E] font-semibold">Moteur actif : ${data.engine || 'Gemini 3.8 Flash TTS'}</div>
+          </div>`;
       }
     }
 

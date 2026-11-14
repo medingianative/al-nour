@@ -17,7 +17,23 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 const PIPER_DIR = path.resolve(process.cwd(), 'models', 'piper');
 const PIPER_BIN = path.join(PIPER_DIR, 'piper', 'piper');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+function getGeminiApiKey(): string {
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
+    return process.env.GEMINI_API_KEY.trim();
+  }
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf-8');
+      const match = content.match(/^GEMINI_API_KEY=(.+)$/m);
+      if (match && match[1].trim()) {
+        return match[1].trim();
+      }
+    }
+  } catch {}
+  return '';
+}
+
 
 export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceConfig> = {
   narrator: {
@@ -139,19 +155,45 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   }
 };
 
-async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function wrapRawPcm24kMonoInWavHeader(pcmBuf: Buffer): Buffer {
+  const sampleRate = 24000;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
+  const blockAlign = (numChannels * bitsPerSample) / 8;
+  const header = Buffer.alloc(44);
+
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + pcmBuf.length, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(numChannels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(pcmBuf.length, 40);
+
+  return Buffer.concat([header, pcmBuf]);
 }
 
 async function synthesizeWithGeminiTTS(
   text: string,
   voiceName: string,
-  outWavPath: string,
-  retryCount = 0
+  outWavPath: string
 ): Promise<boolean> {
-  if (!GEMINI_API_KEY) return false;
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) return false;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent?key=${GEMINI_API_KEY}`;
+  const models = [
+    'gemini-3.8-flash-tts',
+    'gemini-3.8-flash-lite-tts',
+    'gemini-3.1-flash-tts-preview'
+  ];
+
   const payload = {
     contents: [{ parts: [{ text }] }],
     generationConfig: {
@@ -166,32 +208,33 @@ async function synthesizeWithGeminiTTS(
     }
   };
 
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-    if (res.status === 429 && retryCount < 2) {
-      // Rate limit backoff: wait 3 seconds and retry once
-      await sleep(3000);
-      return synthesizeWithGeminiTTS(text, voiceName, outWavPath, retryCount + 1);
+      if (!res.ok) continue;
+
+      const data = (await res.json()) as any;
+      const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+      if (!inlineData?.data) continue;
+
+      const rawBuf = Buffer.from(inlineData.data, 'base64');
+      const isRiffWav = rawBuf.length > 4 && rawBuf.toString('ascii', 0, 4) === 'RIFF';
+      const wavBuf = isRiffWav ? rawBuf : wrapRawPcm24kMonoInWavHeader(rawBuf);
+
+      fs.writeFileSync(outWavPath, wavBuf);
+      return true;
+    } catch {
+      continue;
     }
-
-    if (!res.ok) {
-      return false;
-    }
-
-    const data = (await res.json()) as any;
-    const base64Data = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (!base64Data) return false;
-
-    fs.writeFileSync(outWavPath, Buffer.from(base64Data, 'base64'));
-    return true;
-  } catch {
-    return false;
   }
+
+  return false;
 }
 
 function runPiperProcess(text: string, profile: CharacterVoiceConfig, outputWavPath: string): Promise<void> {
@@ -266,8 +309,8 @@ async function synthesizeCharacterSpeechToMp3(
   let engineUsed = 'Piper-TTS ONNX Local';
   let geminiSuccess = false;
 
-  // 2. Synthèse via Gemini 3.8 Flash TTS avec calligraphie arabe vocalisée native
-  if (profile.geminiVoice && GEMINI_API_KEY) {
+  // 2. Synthèse via Gemini TTS avec calligraphie arabe vocalisée native
+  if (profile.geminiVoice && getGeminiApiKey()) {
     geminiSuccess = await synthesizeWithGeminiTTS(multimodalText, profile.geminiVoice, tempWavPath);
     if (geminiSuccess) {
       engineUsed = `Gemini 3.8 Flash TTS (${profile.geminiVoice})`;
@@ -326,14 +369,30 @@ async function synthesizeCharacterSpeechToMp3(
   return { applied: appliedFrench, engine: engineUsed };
 }
 
-export async function synthesizeSampleVoice(speakerId: SpeakerProfileId, customText?: string): Promise<string> {
+export async function synthesizeSampleVoice(
+  speakerId: SpeakerProfileId,
+  customText?: string
+): Promise<{ audioUrl: string; engine: string }> {
   const profile = CHARACTER_VOICE_PROFILES[speakerId] || CHARACTER_VOICE_PROFILES.narrator;
+
+  // 1. Si écoute standard sans phrase sur-mesure, servir immédiatement l'échantillon vocal Gemini de référence
+  if (!customText) {
+    const refFile = path.resolve(process.cwd(), 'public', 'samples', `sample_gemini_${speakerId}.mp3`);
+    if (fs.existsSync(refFile)) {
+      return {
+        audioUrl: `/samples/sample_gemini_${speakerId}.mp3`,
+        engine: `Gemini 3.8 Flash TTS (${profile.geminiVoice || 'Studio'})`
+      };
+    }
+  }
+
+  // 2. Sinon synthétiser avec cache SQLite et calligraphie arabe
   const sampleText = customText || profile.sampleQuote;
   const filename = `sample_${speakerId}_${Date.now()}.mp3`;
   const outPath = path.join(OUTPUT_DIR, filename);
 
-  await synthesizeCharacterSpeechToMp3(sampleText, profile, outPath);
-  return `/media/${filename}`;
+  const { engine } = await synthesizeCharacterSpeechToMp3(sampleText, profile, outPath);
+  return { audioUrl: `/media/${filename}`, engine };
 }
 
 export async function generateEpisodeAudio(

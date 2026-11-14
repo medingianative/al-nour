@@ -8,5 +8,8 @@ services:
     env_file:
       - .env
     volumes:
+      - ./src:/app/src
+      - ./public:/app/public
       - ./data:/app/data
       - ./public/media:/app/public/media
+

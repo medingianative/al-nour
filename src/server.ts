@@ -88,8 +88,8 @@ const server = http.createServer(async (req, res) => {
       const speakerId = (body.speakerId || 'amina') as any;
       const customText = body.customText ? String(body.customText) : undefined;
       const { synthesizeSampleVoice } = await import('./media/audio-engine.js');
-      const audioUrl = await synthesizeSampleVoice(speakerId, customText);
-      return sendJson(res, 200, { speakerId, audioUrl });
+      const { audioUrl, engine } = await synthesizeSampleVoice(speakerId, customText);
+      return sendJson(res, 200, { speakerId, audioUrl, engine });
     }
 
     // 3. Create a New Episode (Starts at Gate 1: Director)
