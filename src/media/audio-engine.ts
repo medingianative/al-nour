@@ -15,13 +15,16 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 const PIPER_DIR = path.resolve(process.cwd(), 'models', 'piper');
 const PIPER_BIN = path.join(PIPER_DIR, 'piper', 'piper');
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+
 export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceConfig> = {
   narrator: {
     speakerId: 'narrator',
     displayName: 'Narrateur (Al Nour)',
-    role: 'Voix masculine signature calme & posée (Modèle Neuronal Tom 44.1kHz)',
+    role: 'Voix signature calme & posée (Gemini Charon / Tom ONNX)',
     gender: 'male',
     toneDescription: 'Voix masculine sereine, articulée et bienveillante pour ouvrir et clore l’épisode',
+    geminiVoice: 'Charon',
     piperModel: 'fr_FR-tom-medium.onnx',
     piperLengthScale: 1.04,
     pitchShift: 0.99,
@@ -32,9 +35,10 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   tariq: {
     speakerId: 'tariq',
     displayName: 'Tariq (Père • Ingénieur)',
-    role: 'Voix masculine adulte chaleureuse (Modèle Neuronal Pierre UPMC)',
+    role: 'Voix adulte masculine chaleureuse (Gemini Fenrir / Pierre ONNX)',
     gender: 'male',
     toneDescription: 'Voix posée, chaleureuse, naturelle d’un père qui écoute et transmet avec douceur',
+    geminiVoice: 'Fenrir',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 1,
     piperLengthScale: 1.0,
@@ -46,9 +50,10 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   amina: {
     speakerId: 'amina',
     displayName: 'Amina (Mère • Infirmière)',
-    role: 'Voix féminine douce & lumineuse (Modèle Neuronal Jessica UPMC)',
+    role: 'Voix féminine douce & lumineuse (Gemini Kore / Jessica ONNX)',
     gender: 'female',
     toneDescription: 'Voix féminine empathique, lumineuse et pleine de Rahma',
+    geminiVoice: 'Kore',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 0,
     piperLengthScale: 1.0,
@@ -60,22 +65,24 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   ibrahim: {
     speakerId: 'ibrahim',
     displayName: 'Ibrahim (Grand-père • Ex-Avocat)',
-    role: 'Voix masculine grave, mûre & posée (Modèle Neuronal Tom Grave)',
+    role: 'Voix masculine sage, mûre & noble (Gemini Charon / Tom ONNX)',
     gender: 'male',
     toneDescription: 'Voix masculine mûre, profonde et apaisante qui porte le poids de la sagesse et du droit',
+    geminiVoice: 'Charon',
     piperModel: 'fr_FR-tom-medium.onnx',
     piperLengthScale: 1.1,
     pitchShift: 0.94,
     tempoMultiplier: 0.98,
-    sampleQuote: 'Mon petit-fils, la vraie justice commence toujours par écouter avec le cœur avant de juger.',
+    sampleQuote: 'Assalamou Alaykoum mon petit-fils, la vraie justice commence toujours par écouter avec le cœur avant de juger.',
     elevenLabsVoiceId: 'Arnold'
   },
   khadija: {
     speakerId: 'khadija',
     displayName: 'Khadija (Grand-mère)',
-    role: 'Voix féminine mature & enveloppante (Modèle Neuronal Siwis)',
+    role: 'Voix féminine mature & enveloppante (Gemini Aoede / Siwis ONNX)',
     gender: 'female',
     toneDescription: 'Voix féminine douce et mature qui enveloppe d’amour et d’invocations sincères',
+    geminiVoice: 'Aoede',
     piperModel: 'fr_FR-siwis-medium.onnx',
     piperLengthScale: 1.08,
     pitchShift: 0.96,
@@ -86,9 +93,10 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   adam: {
     speakerId: 'adam',
     displayName: 'Adam (Fils • 10 ans)',
-    role: 'Voix de jeune garçon curieux & spontané (Modèle Neuronal Pierre Jeune)',
+    role: 'Voix de jeune garçon spontané & curieux (Gemini Puck)',
     gender: 'male',
     toneDescription: 'Voix jeune, vive et sincère d’un garçon de 10 ans qui pose des questions du fond du cœur',
+    geminiVoice: 'Puck',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 1,
     piperLengthScale: 0.96,
@@ -100,9 +108,10 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   lina: {
     speakerId: 'lina',
     displayName: 'Lina (Petite Fille • 6 ans)',
-    role: 'Voix de petite fille tendre & émerveillée (Modèle Neuronal Jessica Enfant)',
+    role: 'Voix de petite fille tendre & émerveillée (Gemini Aoede Enfant)',
     gender: 'female',
     toneDescription: 'Voix douce, joyeuse et enfantine qui rappelle la simplicité du cœur',
+    geminiVoice: 'Aoede',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 0,
     piperLengthScale: 0.96,
@@ -114,9 +123,10 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
   martin: {
     speakerId: 'martin',
     displayName: 'M. Martin (Voisin d’immeuble)',
-    role: 'Voix masculine chaleureuse de voisin (Modèle Neuronal Pierre Posé)',
+    role: 'Voix masculine de voisin chaleureux (Gemini Fenrir)',
     gender: 'male',
     toneDescription: 'Voix d’homme mûr du quartier, chaleureuse et sincère, touchée par la délicatesse de ses voisins',
+    geminiVoice: 'Fenrir',
     piperModel: 'fr_FR-upmc-medium.onnx',
     piperSpeakerId: 1,
     piperLengthScale: 1.04,
@@ -126,6 +136,61 @@ export const CHARACTER_VOICE_PROFILES: Record<SpeakerProfileId, CharacterVoiceCo
     elevenLabsVoiceId: 'Clyde'
   }
 };
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function synthesizeWithGeminiTTS(
+  text: string,
+  voiceName: string,
+  outWavPath: string,
+  retryCount = 0
+): Promise<boolean> {
+  if (!GEMINI_API_KEY) return false;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent?key=${GEMINI_API_KEY}`;
+  const payload = {
+    contents: [{ parts: [{ text }] }],
+    generationConfig: {
+      responseModalities: ['AUDIO'],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName
+          }
+        }
+      }
+    }
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.status === 429 && retryCount < 2) {
+      // Rate limit backoff: wait 3 seconds and retry once
+      await sleep(3000);
+      return synthesizeWithGeminiTTS(text, voiceName, outWavPath, retryCount + 1);
+    }
+
+    if (!res.ok) {
+      return false;
+    }
+
+    const data = (await res.json()) as any;
+    const base64Data = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Data) return false;
+
+    fs.writeFileSync(outWavPath, Buffer.from(base64Data, 'base64'));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function runPiperProcess(text: string, profile: CharacterVoiceConfig, outputWavPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -168,7 +233,6 @@ function runPiperProcess(text: string, profile: CharacterVoiceConfig, outputWavP
       }
     });
 
-    // Normalize abbreviations like "M. Martin" -> "Monsieur Martin" for natural reading
     const normalizedText = text.replace(/\bM\.\s+/g, 'Monsieur ').trim();
     child.stdin.write(normalizedText + '\n');
     child.stdin.end();
@@ -179,13 +243,28 @@ async function synthesizeCharacterSpeechToMp3(
   rawText: string,
   profile: CharacterVoiceConfig,
   outMp3Path: string
-): Promise<{ applied: Array<{ original: string; phonetic: string }> }> {
+): Promise<{ applied: Array<{ original: string; phonetic: string }>; engine: string }> {
   const { phoneticText, applied } = formatPhoneticFrench(rawText);
-  const tempWavPath = path.join(OUTPUT_DIR, `piper_raw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.wav`);
+  const tempWavPath = path.join(OUTPUT_DIR, `speech_raw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.wav`);
 
-  await runPiperProcess(phoneticText, profile, tempWavPath);
+  let engineUsed = 'Piper-TTS ONNX Local';
+  let geminiSuccess = false;
 
-  const needsRubberband = Math.abs(profile.pitchShift - 1.0) > 0.015 || Math.abs(profile.tempoMultiplier - 1.0) > 0.015;
+  if (profile.geminiVoice && GEMINI_API_KEY) {
+    geminiSuccess = await synthesizeWithGeminiTTS(phoneticText, profile.geminiVoice, tempWavPath);
+    if (geminiSuccess) {
+      engineUsed = `Gemini 3.8 Flash TTS (${profile.geminiVoice})`;
+    }
+  }
+
+  if (!geminiSuccess) {
+    await runPiperProcess(phoneticText, profile, tempWavPath);
+  }
+
+  const needsRubberband =
+    !geminiSuccess &&
+    (Math.abs(profile.pitchShift - 1.0) > 0.015 || Math.abs(profile.tempoMultiplier - 1.0) > 0.015);
+
   const audioFilter = needsRubberband
     ? `rubberband=pitch=${profile.pitchShift}:tempo=${profile.tempoMultiplier},highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11`
     : `highpass=f=65,loudnorm=I=-16:TP=-1.5:LRA=11`;
@@ -211,7 +290,7 @@ async function synthesizeCharacterSpeechToMp3(
     fs.unlinkSync(tempWavPath);
   } catch {}
 
-  return { applied };
+  return { applied, engine: engineUsed };
 }
 
 export async function synthesizeSampleVoice(speakerId: SpeakerProfileId, customText?: string): Promise<string> {
@@ -236,14 +315,16 @@ export async function generateEpisodeAudio(
   const wordTimestamps: SoundDeliverable['wordTimestamps'] = [];
   let globalCursorSec = 0;
   const appliedPhoneticsList: Array<{ original: string; phonetic: string }> = [];
+  const enginesUsedSet = new Set<string>();
 
   for (const scene of script.scenes) {
     const speakerId = scene.speakerId || 'narrator';
     const profile = CHARACTER_VOICE_PROFILES[speakerId] || CHARACTER_VOICE_PROFILES.narrator;
 
     const shapedPath = path.join(OUTPUT_DIR, `${episodeId}_scene_${scene.sceneNumber}_shaped.mp3`);
-    const { applied } = await synthesizeCharacterSpeechToMp3(scene.spokenText, profile, shapedPath);
+    const { applied, engine } = await synthesizeCharacterSpeechToMp3(scene.spokenText, profile, shapedPath);
     applied.forEach(a => appliedPhoneticsList.push(a));
+    enginesUsedSet.add(engine);
 
     // Measure exact scene audio duration
     const probe = await execFileAsync('ffprobe', [
@@ -334,9 +415,11 @@ export async function generateEpisodeAudio(
     } catch {}
   }
 
+  const engineSummary = Array.from(enginesUsedSet).join(', ');
+
   return {
-    voiceEngineUsed: 'Piper-TTS ONNX Local (Modèles Neuronaux Français Hommes & Femmes : Tom, Pierre UPMC, Jessica UPMC, Siwis)',
-    voiceId: 'Casting Neuronal Complet : Ibrahim (Tom Grave), Tariq (Pierre), Amina (Jessica), Khadija (Siwis), Adam & Lina',
+    voiceEngineUsed: `Moteur Vocal Al Nour (${engineSummary})`,
+    voiceId: 'Casting Humain : Ibrahim (Charon), Tariq (Fenrir), Amina (Kore), Adam (Puck), Khadija (Aoede)',
     ambientTrack,
     phoneticAdjustmentsApplied: appliedPhoneticsList,
     audioFileUrl: `/media/${outMp3Name}`,
